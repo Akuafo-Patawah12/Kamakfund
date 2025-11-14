@@ -1,38 +1,35 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff,Activity, Shield, CreditCard, TrendingUp, DollarSign, PieChart, Wallet, BarChart3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginResponse {
   success: boolean;
   message: string;
-  token?: string;
-  user?: {
-    id: string;
-    email: string;
-    name: string;
-    accountNumber: string;
-  };
+ fullName: string
+  
 }
 
 interface FormErrors {
-  email?: string;
+  baseNumber?: string;
   password?: string;
 }
 
 export default function LoginPage() {
-  const [email, setEmail] = useState<string>('');
+  const [baseNumber, setBaseNumber] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-
+  const navigate = useNavigate();
+  
   const validateForm = (): boolean => {
     const errors: FormErrors = {};
     
-    if (!email) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = 'Please enter a valid email address';
+    if (!baseNumber) {
+      errors.baseNumber = 'baseNumber is required';
+    } else if (baseNumber.length < 6) {
+      errors.baseNumber = 'Please enter a valid baseNumber';
     }
     
     if (!password) {
@@ -57,25 +54,37 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('http://localhost:8080/auth/login', {
+      const response = await fetch(`http://localhost:8090/kamakfund/rest/kamak/external_login`, {
         method: 'POST',
+        credentials: "include",
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          baseNumber,
           password,
         }),
       });
 
       const data: LoginResponse = await response.json();
 
+
+
       if (!response.ok) {
         throw new Error(data.message || 'Invalid credentials. Please try again.');
       }
 
+      if (data.message === "Invalid base number or password."){
+        alert("Invalid base number or password.");
+        return
+      }
+      
+      localStorage.setItem("user",data?.fullName || '');
+
+      navigate('/u/dashboard');
+
       console.log('Login successful:', data);
-      alert(`Welcome back! Account: ${data.user?.accountNumber || 'N/A'}`);
+      alert(`Welcome back! Account: ${data.fullName || 'N/A'}`);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unable to connect. Please try again.';
@@ -85,10 +94,10 @@ export default function LoginPage() {
     }
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    setEmail(e.target.value);
-    if (formErrors.email) {
-      setFormErrors(prev => ({ ...prev, email: undefined }));
+  const handleBaseNumberChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setBaseNumber(e.target.value);
+    if (formErrors.baseNumber) {
+      setFormErrors(prev => ({ ...prev, baseNumber: undefined }));
     }
   };
 
@@ -188,7 +197,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-12 h-12 bg-linear-to-br from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 rounded-2xl mb-4 shadow-lg">
             <Shield className="w-6 h-6 text-white dark:text-slate-900" />
           </div>
-          <h1 className="text-red-500 font-bold text-xl">KAMAKFUND</h1>
+          <h1 className="text-red-500 font-bold text-xl">KAMAK FUND</h1>
 
           <p className="text-gray-600 dark:text-gray-400">
             Sign in to access your account
@@ -209,38 +218,38 @@ export default function LoginPage() {
             {/* Email Field */}
             <div>
               <label
-                htmlFor="email"
+                htmlFor="baseNumber"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
-                Email Address
+                Base Number
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                 </div>
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={handleEmailChange}
+                  id="baseNumber"
+                  type="text"
+                  value={baseNumber}
+                  onChange={handleBaseNumberChange}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.currentTarget.form?.requestSubmit(); // programmatically submits the form
                     }
                   }}
                   className={`w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border ${
-                    formErrors.email
+                    formErrors.baseNumber
                       ? "border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500"
                       : "border-gray-300 dark:border-gray-600 focus:border-slate-900 dark:focus:border-slate-300 focus:ring-slate-900 dark:focus:ring-slate-300"
                   } rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 transition-all`}
                   placeholder="you@example.com"
                   disabled={isLoading}
-                  autoComplete="email"
+                  autoComplete="baseNumber"
                 />
               </div>
-              {formErrors.email && (
+              {formErrors.baseNumber && (
                 <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                  {formErrors.email}
+                  {formErrors.baseNumber}
                 </p>
               )}
             </div>
@@ -320,7 +329,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-linear-to-r from-slate-900 to-slate-700 dark:from-slate-200 dark:to-slate-400 text-white dark:text-slate-900 py-2 px-4 rounded-lg font-semibold hover:from-slate-800 hover:to-slate-600 dark:hover:from-slate-300 dark:hover:to-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-300 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg hover:shadow-xl"
+              className="w-full bg-linear-to-r from-slate-900 to-slate-700 dark:from-red-500 dark:to-red-500 text-white dark:text-white py-2 px-4 rounded-lg font-semibold hover:from-slate-800 hover:to-slate-600 dark:hover:from-slate-300 dark:hover:to-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-300 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg hover:shadow-xl"
             >
               {isLoading ? (
                 <>
