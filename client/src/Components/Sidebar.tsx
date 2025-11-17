@@ -1,25 +1,33 @@
 import { useState, useEffect } from 'react';
-import { 
-  User, 
-  Wallet, 
-  TrendingUp, 
-  CreditCard, 
+import {
+  User,
+  Wallet,
+  BarChart3,
   LineChart,
-  Briefcase,
-  Lock, 
-  Layout, 
-  Calculator, 
-  HelpCircle, 
-  MessageCircle, 
-  LogOut,
-  ChevronDown,
-  Search,
+  DollarSign,
+  Landmark,
   Settings,
+  LogOut,
   ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
+  ChevronDown,
+  
+  Scroll,
+  FileText,
+  Building2,
+  ReceiptText,
+  Briefcase,
+  LayoutDashboard,
+  Calculator,
+  HelpCircle,
+  ChevronRight,
+  Search,
+  MessageCircle,
+  Lock,
+} from "lucide-react";
+
 import { Link } from 'react-router-dom';
 import { handleLogout } from '../utils/logoutFunction';
+import path from 'path';
 
 interface AdvancedSidebarNavProps {
   onNavigate?: () => void;
@@ -39,48 +47,70 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
   }, []);
 
   const menuSections = [
-    {
-      id: 'financial',
-      title: 'Financial',
-    items : [
-  { name: 'Account', icon: Wallet, badge: '3',path: '/u/account '},
-  { name: 'Mutual Funds', icon: LineChart, badge: '3' },
-  { name: 'Investment', icon: TrendingUp, badge: null },
-  { name: 'Other Investment', icon: Briefcase, badge: '3' },
-  { name: 'Loans', icon: CreditCard, path: '/u/loans' },
-]
-    },
-    {
-      id: 'management',
-      title: 'Management',
-      items: [
-        { name: 'Profile', icon: User, path: '/u/profile' },
-        { name: 'Consolidated view', icon: Layout },
-      ]
-    },
-    {
-      id: 'tools',
-      title: 'Tools & Resources',
-      items: [
-        { name: 'Investment Calculator', icon: Calculator },
-        { name: 'Frequently asked questions', icon: HelpCircle },
-      ]
-    },
-    {
-      id: 'support',
-      title: 'Support',
-      items: [
-        { name: 'Chat with us', icon: MessageCircle, badge: '2' },
-      ]
-    },
-    {
-      id: 'security',
-      title: 'Security',
-      items: [
-        { name: 'Change of password', icon: Lock },
-      ]
-    }
-  ];
+  {
+    id: "financial",
+    title: "Financial",
+    items: [
+      { name: "Account", icon: Wallet, badge: "3", path: "/u/account" },
+      { name: "Collective Investments", icon: BarChart3, badge: "3" },
+      { name: "Loans", icon: Landmark, path: "/u/loans" },
+    ],
+  },
+
+  {
+    id: "investment",
+    title: "Investment",
+    items: [
+      { name: "Fixed Income", icon: DollarSign, path: "/u/investment/fixedIncome" },
+      { name: "Bonds", icon: Scroll, path: "/u/investment/bonds" },
+      { name: "Non Fixed Incomes", icon: LineChart , path: "/u/investment/nonFixedIncome" },
+    ],
+  },
+
+  {
+    id: "other_investment",
+    title: "Other Investment",
+    items: [
+      { name: "Commercial Paper", icon: FileText },
+      { name: "Real Estate Property", icon: Building2 },
+      { name: "Debt Investment", icon: ReceiptText },
+      { name: "Private Equity Investment", icon: Briefcase },
+    ],
+  },
+
+  {
+    id: "management",
+    title: "Management",
+    items: [
+      { name: "Profile", icon: User, path: "/u/profile" },
+      { name: "Consolidated view", icon: LayoutDashboard },
+    ],
+  },
+
+  {
+    id: "tools",
+    title: "Tools & Resources",
+    items: [
+      { name: "Investment Calculator", icon: Calculator },
+      { name: "Frequently asked questions", icon: HelpCircle },
+    ],
+  },
+
+  {
+    id: "support",
+    title: "Support",
+    items: [
+      { name: "Chat with us", icon: MessageCircle, badge: "2" },
+    ],
+  },
+
+  {
+    id: "security",
+    title: "Security",
+    items: [{ name: "Change of password", icon: Lock }],
+  },
+];
+
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev =>

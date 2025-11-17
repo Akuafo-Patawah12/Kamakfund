@@ -6,6 +6,9 @@ import Profile from '../Pages/Profile';
 import Header from '../Components/Header';
 import Dashboard from '../Pages/Dashoard';
 import Account from '../Pages/Financial/Account';
+import FixedIncome from '../Pages/Investment/fixedIncome';
+import BondInvestments from '../Pages/Investment/bond';
+import NonFixedInvestments from '../Pages/Investment/nonFixedInvestment';
 
 const Layout: React.FC = () => {
   const location = useLocation();
@@ -52,8 +55,15 @@ const Layout: React.FC = () => {
         <Routes>
           <Route path="/dashboard" element={<Dashboard/>} />
           <Route path="/profile" element={<Profile />} />
+
+          {/* Financial Routes */}
           <Route path="/account" element={<Account />} />
-          {/* Add more routes as needed */}
+
+          {/* Investment Route*/}
+          <Route path="/investment/fixedIncome" element={<FixedIncome />} />
+          <Route path="/investment/nonFixedIncome" element={<NonFixedInvestments/>} />
+          <Route path="/investment/bonds" element={<BondInvestments/>} />
+
         </Routes>
       </main>
     </div>
