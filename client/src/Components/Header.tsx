@@ -12,7 +12,7 @@ const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isSidebarOpen }) =>
 
   useEffect(() => {
     // Read user from localStorage
-    const storedUser = localStorage.getItem("user");
+    const storedUser = localStorage.getItem("fullName");
 
     if (storedUser) {
       try {

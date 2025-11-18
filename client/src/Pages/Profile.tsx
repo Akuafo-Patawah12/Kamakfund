@@ -57,9 +57,33 @@ const Profile: React.FC = () => {
 
     const navigate = useNavigate();
 
-    const fetchUserProfile = async () => {
+    const [userId, setUserId] = useState<string>("");
+    const url = import.meta.env.VITE_BASE_URL
+    
+    useEffect(() => {
+      const storedUser = localStorage.getItem("userId");
+    
+      if (storedUser) {
         try {
-            const response = await fetch('http://localhost:8090/kamakfund/rest/kamak/customer/profile', {
+          const parsed = JSON.parse(storedUser);
+          console.log("this is the parsed userId", parsed)
+    
+          if (parsed) {
+            setUserId(parsed);
+          } else if (typeof parsed === "string") {
+            setUserId(parsed);
+          }
+        } catch {
+          setUserId(storedUser);
+        }
+      }
+    }, []);
+
+    const fetchUserProfile = async () => {
+
+        if (!userId) return
+        try {
+            const response = await fetch(`${url}/kamakfund/rest/kamak/customer/${userId}/profile`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -95,7 +119,7 @@ const Profile: React.FC = () => {
 
     useEffect(() => {
         fetchUserProfile();
-    }, []);
+    }, [userId]);
 
     const handleEditAddress = () => {
         setIsEditingAddress(true);

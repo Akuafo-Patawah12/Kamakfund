@@ -5,9 +5,12 @@ import { useNavigate } from 'react-router-dom';
 interface LoginResponse {
   success: boolean;
   message: string;
- fullName: string
-  
+  data: {
+    userName: string;
+    userId: string;
+  };
 }
+
 
 interface FormErrors {
   baseNumber?: string;
@@ -22,6 +25,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string>('');
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const navigate = useNavigate();
+  const url = import.meta.env.VITE_BASE_URL
   
   const validateForm = (): boolean => {
     const errors: FormErrors = {};
@@ -54,7 +58,7 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`http://localhost:8090/kamakfund/rest/kamak/external_login`, {
+      const response = await fetch(`${url}/kamakfund/rest/kamak/external_login`, {
         method: 'POST',
         credentials: "include",
         headers: {
@@ -67,6 +71,7 @@ export default function LoginPage() {
       });
 
       const data: LoginResponse = await response.json();
+      console.log(data);
 
 
 
@@ -79,12 +84,13 @@ export default function LoginPage() {
         return
       }
       
-      localStorage.setItem("user",data?.fullName || '');
+      localStorage.setItem("fullName",data.data?.userName || '');
+      localStorage.setItem("userId",data.data?.userId || '');
 
       navigate('/u/dashboard');
 
       console.log('Login successful:', data);
-      alert(`Welcome back! Account: ${data.fullName || 'N/A'}`);
+      alert(`Welcome back! Account: ${data.data.userName || 'N/A'}`);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unable to connect. Please try again.';

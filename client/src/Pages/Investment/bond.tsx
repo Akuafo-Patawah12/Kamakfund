@@ -37,11 +37,34 @@ function BondInvestments() {
   const [filterMinValue, setFilterMinValue] = useState<string>("");
   const [filterMaxValue, setFilterMaxValue] = useState<string>("");
 
+  const [userId, setUserId] = useState<string>("");
+  const url = import.meta.env.VITE_BASE_URL
+  
+  useEffect(() => {
+    const storedUser = localStorage.getItem("userId");
+  
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        console.log("this is the parsed userId", parsed)
+  
+        if (parsed) {
+          setUserId(parsed);
+        } else if (typeof parsed === "string") {
+          setUserId(parsed);
+        }
+      } catch {
+        setUserId(storedUser);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const fetchBonds = async () => {
+      if (!userId) return; //  Prevent empty calls
       try {
         const response = await fetch(
-          "http://192.168.1.54:8090/kamakfund/rest/kamak/customer/bond-investments",
+          `${url}/kamakfund/rest/kamak/customer/${userId}/bond-investments`,
           {
             method: "GET",
             credentials: "include",
@@ -73,7 +96,7 @@ function BondInvestments() {
     };
 
     fetchBonds();
-  }, []);
+  }, [userId]);
 
   // Apply filters whenever filter criteria change
   useEffect(() => {

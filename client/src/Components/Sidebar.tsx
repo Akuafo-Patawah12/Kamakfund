@@ -10,7 +10,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronDown,
-  
+  type LucideProps,
   Scroll,
   FileText,
   Building2,
@@ -27,11 +27,25 @@ import {
 
 import { Link } from 'react-router-dom';
 import { handleLogout } from '../utils/logoutFunction';
-import path from 'path';
+
 
 interface AdvancedSidebarNavProps {
   onNavigate?: () => void;
 }
+
+interface MenuItem {
+  name: string;
+  icon: React.ComponentType;
+  badge?: string;
+  path?: string;
+}
+
+interface MenuSection {
+  id: string;
+  title: string;
+  items: MenuItem[];
+}
+
 
 export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavProps) {
   const [activeItem, setActiveItem] = useState('Account');
@@ -46,13 +60,13 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
     }
   }, []);
 
-  const menuSections = [
+  const menuSections: MenuSection[] = [
   {
     id: "financial",
     title: "Financial",
-    items: [
-      { name: "Account", icon: Wallet, badge: "3", path: "/u/account" },
-      { name: "Collective Investments", icon: BarChart3, badge: "3" },
+    items : [
+      { name: "Account", icon: Wallet, badge: "3", path:"/u/account" },
+      { name: "Collective Investments", icon: BarChart3, badge: "3" ,path:"/u/collective_investment" },
       { name: "Loans", icon: Landmark, path: "/u/loans" },
     ],
   },
@@ -194,12 +208,12 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
                 !isCollapsed && !expandedSections.includes(section.id) ? 'hidden' : ''
               }`}>
                 {section.items.map((item) => {
-                  const Icon = item.icon;
+                  const Icon = item.icon as React.FC<LucideProps>;
                   const isActive = activeItem === item.name;
                   
                   return (
                     <Link 
-                      to={item.path || "/"} 
+                      to={item?.path || "/"} 
                       state={{ pageName: item.name }}  
                       key={item.name}
                     >
@@ -214,7 +228,7 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
                           }
                         `}
                       >
-                        <Icon size={20} className="flex-shrink-0" />
+                        <Icon size={20} className="shrink-0" />
                         {!isCollapsed && (
                           <span className="text-sm font-medium flex-1 text-left">
                             {item.name}
@@ -241,7 +255,7 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
           {/* Settings & Logout */}
           <div className="p-3 space-y-1">
             <button className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-all group relative">
-              <Settings size={20} className="flex-shrink-0" />
+              <Settings size={20} className="shrink-0" />
               {!isCollapsed && <span className="text-sm font-medium">Settings</span>}
               {isCollapsed && (
                 <div className="absolute left-full ml-4 px-3 py-2 bg-slate-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-xl border border-slate-700">
@@ -251,7 +265,7 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
             </button>
             
             <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all group relative">
-              <LogOut size={20} className="flex-shrink-0" />
+              <LogOut size={20} className="shrink-0" />
               {!isCollapsed && <span className="text-sm font-medium">Logout</span>}
               {isCollapsed && (
                 <div className="absolute left-full ml-4 px-3 py-2 bg-slate-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 shadow-xl border border-slate-700">

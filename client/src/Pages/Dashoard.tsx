@@ -72,7 +72,8 @@ const Dashboard = () => {
   }, [accounts]);
 
   const accountTypeData = useMemo(() => {
-    const typeMap = {};
+    const typeMap: Record<string, number> = {};
+
     accounts.forEach(acc => {
       if (!typeMap[acc.account_type]) {
         typeMap[acc.account_type] = 0;

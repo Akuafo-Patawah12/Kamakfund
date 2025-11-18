@@ -45,6 +45,8 @@ const [selectedAccount, setSelectedAccount] = useState<Partial<Account> | null>(
 const [loadingTransactions, setLoadingTransactions] = useState(false);
 const [user, setUser] = useState<string | null>(null);
 
+const url = import.meta.env.VITE_BASE_URL
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -52,8 +54,32 @@ const [user, setUser] = useState<string | null>(null);
     }
   }, []);
 
+   const [userId, setUserId] = useState<string>("");
+      
+      useEffect(() => {
+        const storedUser = localStorage.getItem("userId");
+      
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            console.log("this is the parsed userId", parsed)
+      
+            if (parsed) {
+              setUserId(parsed);
+            } else if (typeof parsed === "string") {
+              setUserId(parsed);
+            }
+          } catch {
+            setUserId(storedUser);
+          }
+        }
+      }, []);
+
   useEffect(() => {
-    fetch('http://localhost:8090/kamakfund/rest/kamak/customer/accounts', {
+    if (!userId) return;
+
+
+    fetch(`${url}/kamakfund/rest/kamak/customer/${userId}/accounts`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -72,7 +98,7 @@ const [user, setUser] = useState<string | null>(null);
         console.error('Error fetching accounts:', err);
         setLoading(false);
       });
-  }, []);
+  }, [userId]);
 
   const fetchTransactions = async (account: Account) => {
     setLoadingTransactions(true);
@@ -80,7 +106,7 @@ const [user, setUser] = useState<string | null>(null);
     setTransactions([]);
     
     try {
-      const res = await fetch(`http://localhost:8090/kamakfund/rest/kamak/customer/account/${account.accountId}/transactions`, {
+      const res = await fetch(`${url}/kamakfund/rest/kamak/customer/${userId}/account/${account.accountId}/transactions`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

@@ -9,6 +9,7 @@ import Account from '../Pages/Financial/Account';
 import FixedIncome from '../Pages/Investment/fixedIncome';
 import BondInvestments from '../Pages/Investment/bond';
 import NonFixedInvestments from '../Pages/Investment/nonFixedInvestment';
+import CollectiveInvestments from '../Pages/Financial/collectiveInvestment';
 
 const Layout: React.FC = () => {
   const location = useLocation();
@@ -58,6 +59,7 @@ const Layout: React.FC = () => {
 
           {/* Financial Routes */}
           <Route path="/account" element={<Account />} />
+          <Route path="/collective_investment" element={<CollectiveInvestments />} />
 
           {/* Investment Route*/}
           <Route path="/investment/fixedIncome" element={<FixedIncome />} />

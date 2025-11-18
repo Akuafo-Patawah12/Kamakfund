@@ -22,11 +22,37 @@ const FixedIncome: React.FC = () => {
   const [investments, setInvestments] = useState<MoneyMarketInvestment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const url = import.meta.env.VITE_BASE_URL
+
+
+  const [userId, setUserId] = useState<string>("");
+  
+  useEffect(() => {
+    const storedUser = localStorage.getItem("userId");
+  
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        console.log("this is the parsed userId", parsed)
+  
+        if (parsed) {
+          setUserId(parsed);
+        } else if (typeof parsed === "string") {
+          setUserId(parsed);
+        }
+      } catch {
+        setUserId(storedUser);
+      }
+    }
+  }, []);
 
   const fetchInvestments = async () => {
+    
+    
     try {
       const res = await fetch(
-        "http://192.168.1.54:8090/kamakfund/rest/kamak/customer/money-market-investments",
+        `${url}/kamakfund/rest/kamak/customer/${userId}/money-market-investments`,
         {
           method: "GET",
           credentials: "include",
@@ -45,16 +71,23 @@ const FixedIncome: React.FC = () => {
       } else {
         setError(data.message || "Failed to fetch investments");
       }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
+    } catch (err: unknown) {
+  if (err instanceof Error) {
+    setError(err.message);
+  } else {
+    setError("An unexpected error occurred");
+  }
+}
+ finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (!userId) return;
     fetchInvestments();
-  }, []);
+  }, [userId]);
+
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
