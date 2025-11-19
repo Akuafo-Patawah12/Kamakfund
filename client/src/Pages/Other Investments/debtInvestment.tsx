@@ -1,42 +1,40 @@
 import React, { useEffect, useState } from "react";
-import { Search, Filter, X, ChevronDown, TrendingUp } from "lucide-react";
+import { Search, Filter, X, ChevronDown, Wallet, TrendingUp, Calendar } from "lucide-react";
 
-interface CollectiveInvestment {
-  accountNumber: string;
-  totalUnits: number;
-  unitPrice: number;
-  lastContributionDate: string;
-  lastTransactionAmount: number;
-  paymentFrequency: string;
-  investmentDate: string;
-  status: string;
-  refNo: string;
-  lastValuationDate: string;
-  cashBalance?: number;
-  paymentStatus?: string;
+interface DebtInvestment {
+  id: number;
+  amountInvested: number;
+  principalAmount: number;
+  interestRate: number;
+  interestRateAmount: number;
+  maturityDate: string;
+  tradeDate: string;
+  totalOutstanding: number;
+  customerId: number;
 }
 
 interface ApiResponse {
   status: number;
-  data: CollectiveInvestment[];
+  data: DebtInvestment[];
   message?: string;
 }
 
-function CollectiveInvestments() {
-  const [investments, setInvestments] = useState<CollectiveInvestment[]>([]);
-  const [filteredInvestments, setFilteredInvestments] = useState<CollectiveInvestment[]>([]);
+function DebtInvestments() {
+  const [investments, setInvestments] = useState<DebtInvestment[]>([]);
+  const [filteredInvestments, setFilteredInvestments] = useState<DebtInvestment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showFilters, setShowFilters] = useState<boolean>(false);
   
   // Filter states
-  const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterPaymentStatus, setFilterPaymentStatus] = useState<string>("all");
-  const [filterPaymentFrequency, setFilterPaymentFrequency] = useState<string>("all");
-  const [filterMinValuation, setFilterMinValuation] = useState<string>("");
-  const [filterMaxValuation, setFilterMaxValuation] = useState<string>("");
-  const [filterMinUnits, setFilterMinUnits] = useState<string>("");
+  const [filterMinInvested, setFilterMinInvested] = useState<string>("");
+  const [filterMaxInvested, setFilterMaxInvested] = useState<string>("");
+  const [filterMinInterestRate, setFilterMinInterestRate] = useState<string>("");
+  const [filterMaxInterestRate, setFilterMaxInterestRate] = useState<string>("");
+  const [filterMinOutstanding, setFilterMinOutstanding] = useState<string>("");
+  const [filterMaxOutstanding, setFilterMaxOutstanding] = useState<string>("");
+  const [filterMaturityYear, setFilterMaturityYear] = useState<string>("all");
   const [userId, setUserId] = useState<string>("");
 
   const url = import.meta.env.VITE_BASE_URL;
@@ -67,7 +65,7 @@ function CollectiveInvestments() {
     const fetchInvestments = async () => {
       try {
         const response = await fetch(
-          `${url}/kamakfund/rest/kamak/customer/${userId}/collective-investments`,
+          `${url}/kamakfund/rest/kamak/customer/${userId}/debt-investments`,
           {
             method: "GET",
             credentials: "include",
@@ -84,14 +82,15 @@ function CollectiveInvestments() {
         const data: ApiResponse = await response.json();
 
         if (data.status === 1) {
+            console.log(data)
           setInvestments(data.data);
           setFilteredInvestments(data.data);
         } else {
-          setError(data.message || "Failed to fetch collective investments");
+          setError(data.message || "Failed to fetch debt investments");
         }
       } catch (err) {
-        console.error("Error fetching collective investments:", err);
-        setError("Error fetching collective investments");
+        console.error("Error fetching debt investments:", err);
+        setError("Error fetching debt investments");
       } finally {
         setLoading(false);
       }
@@ -100,9 +99,19 @@ function CollectiveInvestments() {
     fetchInvestments();
   }, [userId, url]);
 
-  // Calculate valuation helper function
-  const calculateValuation = (investment: CollectiveInvestment): number => {
-    return investment.unitPrice * investment.totalUnits;
+  // Calculate days to maturity
+  const calculateDaysToMaturity = (maturityDate: string): number => {
+    if (!maturityDate) return 0;
+    const today = new Date();
+    const maturity = new Date(maturityDate);
+    const diffTime = maturity.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  // Check if investment is mature
+  const isMatured = (maturityDate: string): boolean => {
+    return calculateDaysToMaturity(maturityDate) <= 0;
   };
 
   // Apply filters
@@ -113,65 +122,79 @@ function CollectiveInvestments() {
     if (searchTerm) {
       filtered = filtered.filter(
         (inv) =>
-          inv.accountNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          inv.refNo?.toLowerCase().includes(searchTerm.toLowerCase())
+          inv.id?.toString().includes(searchTerm) ||
+          inv.principalAmount?.toString().includes(searchTerm)
       );
     }
 
-    // Status filter
-    if (filterStatus !== "all") {
-      filtered = filtered.filter((inv) => inv.status?.toLowerCase() === filterStatus.toLowerCase());
+    // Min invested filter
+    if (filterMinInvested) {
+      const minInv = parseFloat(filterMinInvested);
+      filtered = filtered.filter((inv) => inv.amountInvested >= minInv);
     }
 
-    // Payment status filter
-    if (filterPaymentStatus !== "all") {
-      filtered = filtered.filter((inv) => inv.paymentStatus?.toLowerCase() === filterPaymentStatus.toLowerCase());
+    // Max invested filter
+    if (filterMaxInvested) {
+      const maxInv = parseFloat(filterMaxInvested);
+      filtered = filtered.filter((inv) => inv.amountInvested <= maxInv);
     }
 
-    // Payment frequency filter
-    if (filterPaymentFrequency !== "all") {
-      filtered = filtered.filter((inv) => inv.paymentFrequency?.toLowerCase() === filterPaymentFrequency.toLowerCase());
+    // Min interest rate filter
+    if (filterMinInterestRate) {
+      const minRate = parseFloat(filterMinInterestRate);
+      filtered = filtered.filter((inv) => inv.interestRate >= minRate);
     }
 
-    // Min valuation filter
-    if (filterMinValuation) {
-      const minVal = parseFloat(filterMinValuation);
-      filtered = filtered.filter((inv) => calculateValuation(inv) >= minVal);
+    // Max interest rate filter
+    if (filterMaxInterestRate) {
+      const maxRate = parseFloat(filterMaxInterestRate);
+      filtered = filtered.filter((inv) => inv.interestRate <= maxRate);
     }
 
-    // Max valuation filter
-    if (filterMaxValuation) {
-      const maxVal = parseFloat(filterMaxValuation);
-      filtered = filtered.filter((inv) => calculateValuation(inv) <= maxVal);
+    // Min outstanding filter
+    if (filterMinOutstanding) {
+      const minOut = parseFloat(filterMinOutstanding);
+      filtered = filtered.filter((inv) => inv.totalOutstanding >= minOut);
     }
 
-    // Min units filter
-    if (filterMinUnits) {
-      const minUnits = parseFloat(filterMinUnits);
-      filtered = filtered.filter((inv) => inv.totalUnits >= minUnits);
+    // Max outstanding filter
+    if (filterMaxOutstanding) {
+      const maxOut = parseFloat(filterMaxOutstanding);
+      filtered = filtered.filter((inv) => inv.totalOutstanding <= maxOut);
+    }
+
+    // Maturity year filter
+    if (filterMaturityYear !== "all") {
+      filtered = filtered.filter((inv) => {
+        if (!inv.maturityDate) return false;
+        const year = new Date(inv.maturityDate).getFullYear().toString();
+        return year === filterMaturityYear;
+      });
     }
 
     setFilteredInvestments(filtered);
-  }, [investments, searchTerm, filterStatus, filterPaymentStatus, filterPaymentFrequency, filterMinValuation, filterMaxValuation, filterMinUnits]);
+  }, [investments, searchTerm, filterMinInvested, filterMaxInvested, filterMinInterestRate, filterMaxInterestRate, filterMinOutstanding, filterMaxOutstanding, filterMaturityYear]);
 
   const resetFilters = () => {
     setSearchTerm("");
-    setFilterStatus("all");
-    setFilterPaymentStatus("all");
-    setFilterPaymentFrequency("all");
-    setFilterMinValuation("");
-    setFilterMaxValuation("");
-    setFilterMinUnits("");
+    setFilterMinInvested("");
+    setFilterMaxInvested("");
+    setFilterMinInterestRate("");
+    setFilterMaxInterestRate("");
+    setFilterMinOutstanding("");
+    setFilterMaxOutstanding("");
+    setFilterMaturityYear("all");
   };
 
   const hasActiveFilters = 
     searchTerm !== "" || 
-    filterStatus !== "all" || 
-    filterPaymentStatus !== "all" || 
-    filterPaymentFrequency !== "all" || 
-    filterMinValuation !== "" || 
-    filterMaxValuation !== "" || 
-    filterMinUnits !== "";
+    filterMinInvested !== "" || 
+    filterMaxInvested !== "" || 
+    filterMinInterestRate !== "" || 
+    filterMaxInterestRate !== "" ||
+    filterMinOutstanding !== "" ||
+    filterMaxOutstanding !== "" ||
+    filterMaturityYear !== "all";
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat("en-US", {
@@ -191,22 +214,12 @@ function CollectiveInvestments() {
     });
   };
 
-  const getStatusBadgeClass = (status: string): string => {
-    if (!status) return "bg-gray-100 text-gray-700";
-    const statusLower = status.toLowerCase();
-    if (statusLower === "active") return "bg-emerald-100 text-emerald-700";
-    if (statusLower === "inactive" || statusLower === "closed") return "bg-gray-100 text-gray-700";
-    if (statusLower === "pending") return "bg-yellow-100 text-yellow-700";
-    return "bg-blue-100 text-blue-700";
-  };
-
-  const getPaymentStatusBadgeClass = (status: string): string => {
-    if (!status) return "bg-gray-100 text-gray-700";
-    const statusLower = status.toLowerCase();
-    if (statusLower === "paid" || statusLower === "current") return "bg-emerald-100 text-emerald-700";
-    if (statusLower === "overdue" || statusLower === "late") return "bg-red-100 text-red-700";
-    if (statusLower === "pending") return "bg-yellow-100 text-yellow-700";
-    return "bg-gray-100 text-gray-700";
+  const getMaturityBadgeClass = (maturityDate: string): string => {
+    const daysToMaturity = calculateDaysToMaturity(maturityDate);
+    if (daysToMaturity <= 0) return "bg-gray-100 text-gray-700";
+    if (daysToMaturity <= 30) return "bg-red-100 text-red-700";
+    if (daysToMaturity <= 90) return "bg-yellow-100 text-yellow-700";
+    return "bg-emerald-100 text-emerald-700";
   };
 
   if (loading) {
@@ -214,7 +227,7 @@ function CollectiveInvestments() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
         <div className="text-center">
           <div className="inline-block w-12 h-12 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600 text-sm">Loading collective investments...</p>
+          <p className="text-gray-600 text-sm">Loading debt investments...</p>
         </div>
       </div>
     );
@@ -231,25 +244,34 @@ function CollectiveInvestments() {
     );
   }
 
-  const totalValuation = filteredInvestments.reduce((sum, inv) => sum + calculateValuation(inv), 0);
-  const totalCashBalance = filteredInvestments.reduce((sum, inv) => sum + (inv.cashBalance || 0), 0);
-  const totalUnits = filteredInvestments.reduce((sum, inv) => sum + (inv.totalUnits || 0), 0);
-  const activeAccounts = filteredInvestments.filter(inv => inv.status?.toLowerCase() === "active").length;
+  const totalInvested = filteredInvestments.reduce((sum, inv) => sum + inv.amountInvested, 0);
+  const totalOutstanding = filteredInvestments.reduce((sum, inv) => sum + inv.totalOutstanding, 0);
+  const totalInterestEarned = filteredInvestments.reduce((sum, inv) => sum + inv.interestRateAmount, 0);
+  const averageInterestRate = filteredInvestments.length > 0 
+    ? filteredInvestments.reduce((sum, inv) => sum + inv.interestRate, 0) / filteredInvestments.length 
+    : 0;
+  const maturedInvestments = filteredInvestments.filter(inv => isMatured(inv.maturityDate)).length;
+  const activeInvestments = filteredInvestments.filter(inv => !isMatured(inv.maturityDate)).length;
 
-  // Get unique values for filter dropdowns
-  const uniqueStatuses = Array.from(new Set(investments.map(inv => inv.status).filter(Boolean)));
-  const uniquePaymentStatuses = Array.from(new Set(investments.map(inv => inv.paymentStatus).filter(Boolean)));
-  const uniqueFrequencies = Array.from(new Set(investments.map(inv => inv.paymentFrequency).filter(Boolean)));
+  // Get unique maturity years for filter dropdown
+  const uniqueYears = Array.from(new Set(
+    investments
+      .map(inv => inv.maturityDate ? new Date(inv.maturityDate).getFullYear() : null)
+      .filter(Boolean)
+  )).sort();
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-3xl font-semibold text-gray-900 mb-1">
-            Collective Investments
-          </h1>
-          <p className="text-gray-500 text-sm">Unit trust and mutual fund portfolio overview</p>
+          <div className="flex items-center gap-3 mb-2">
+            <Wallet className="w-8 h-8 text-gray-700" />
+            <h1 className="text-3xl font-semibold text-gray-900">
+              Debt Investments
+            </h1>
+          </div>
+          <p className="text-gray-500 text-sm">Fixed income and debt securities portfolio</p>
         </div>
 
         {/* Search and Filter Bar */}
@@ -259,7 +281,7 @@ function CollectiveInvestments() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search by account number or reference..."
+                placeholder="Search by ID or principal amount..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
@@ -278,7 +300,7 @@ function CollectiveInvestments() {
               Filters
               {hasActiveFilters && (
                 <span className="bg-white text-gray-900 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-                  {[searchTerm, filterStatus !== "all", filterPaymentStatus !== "all", filterPaymentFrequency !== "all", filterMinValuation, filterMaxValuation, filterMinUnits].filter(Boolean).length}
+                  {[searchTerm, filterMinInvested, filterMaxInvested, filterMinInterestRate, filterMaxInterestRate, filterMinOutstanding, filterMaxOutstanding, filterMaturityYear !== "all"].filter(Boolean).length}
                 </span>
               )}
               <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
@@ -301,89 +323,96 @@ function CollectiveInvestments() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-2">
-                    Account Status
-                  </label>
-                  <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  >
-                    <option value="all">All Statuses</option>
-                    {uniqueStatuses.map(status => (
-                      <option key={status} value={status}>{status}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
-                    Payment Status
-                  </label>
-                  <select
-                    value={filterPaymentStatus}
-                    onChange={(e) => setFilterPaymentStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  >
-                    <option value="all">All Payment Statuses</option>
-                    {uniquePaymentStatuses.map(status => (
-                      <option key={status} value={status}>{status}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
-                    Payment Frequency
-                  </label>
-                  <select
-                    value={filterPaymentFrequency}
-                    onChange={(e) => setFilterPaymentFrequency(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                  >
-                    <option value="all">All Frequencies</option>
-                    {uniqueFrequencies.map(freq => (
-                      <option key={freq} value={freq}>{freq}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
-                    Min Valuation (GHS)
+                    Min Amount Invested (GHS)
                   </label>
                   <input
                     type="number"
                     placeholder="0"
-                    value={filterMinValuation}
-                    onChange={(e) => setFilterMinValuation(e.target.value)}
+                    value={filterMinInvested}
+                    onChange={(e) => setFilterMinInvested(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-2">
-                    Max Valuation (GHS)
+                    Max Amount Invested (GHS)
                   </label>
                   <input
                     type="number"
                     placeholder="No limit"
-                    value={filterMaxValuation}
-                    onChange={(e) => setFilterMaxValuation(e.target.value)}
+                    value={filterMaxInvested}
+                    onChange={(e) => setFilterMaxInvested(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-2">
-                    Min Units
+                    Min Interest Rate (%)
                   </label>
                   <input
                     type="number"
                     placeholder="0"
-                    value={filterMinUnits}
-                    onChange={(e) => setFilterMinUnits(e.target.value)}
+                    value={filterMinInterestRate}
+                    onChange={(e) => setFilterMinInterestRate(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                    Max Interest Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="No limit"
+                    value={filterMaxInterestRate}
+                    onChange={(e) => setFilterMaxInterestRate(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                    Min Outstanding (GHS)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={filterMinOutstanding}
+                    onChange={(e) => setFilterMinOutstanding(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                    Max Outstanding (GHS)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="No limit"
+                    value={filterMaxOutstanding}
+                    onChange={(e) => setFilterMaxOutstanding(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                    Maturity Year
+                  </label>
+                  <select
+                    value={filterMaturityYear}
+                    onChange={(e) => setFilterMaturityYear(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  >
+                    <option value="all">All Years</option>
+                    {uniqueYears.map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
@@ -392,46 +421,49 @@ function CollectiveInvestments() {
 
         {/* Results Count */}
         <div className="mb-4 text-sm text-gray-600">
-          Showing {filteredInvestments.length} of {investments.length} accounts
+          Showing {filteredInvestments.length} of {investments.length} investments
           {hasActiveFilters && " (filtered)"}
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Active Accounts
+              Active Investments
             </p>
-            <p className="text-2xl font-semibold text-gray-900">{activeAccounts}</p>
+            <p className="text-2xl font-semibold text-gray-900">{activeInvestments}</p>
             <p className="text-xs text-gray-500 mt-1">
-              of {filteredInvestments.length} total
+              {maturedInvestments} matured
             </p>
           </div>
 
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Units
+              Total Invested
             </p>
             <p className="text-2xl font-semibold text-gray-900">
-              {totalUnits.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              {formatCurrency(totalInvested)}
             </p>
           </div>
 
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Valuation
+              Total Outstanding
             </p>
             <p className="text-2xl font-semibold text-gray-900">
-              {formatCurrency(totalValuation)}
+              {formatCurrency(totalOutstanding)}
             </p>
           </div>
 
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Cash Balance
+              Total Interest Earned
             </p>
-            <p className="text-2xl font-semibold text-gray-900">
-              {formatCurrency(totalCashBalance)}
+            <p className="text-2xl font-semibold text-emerald-600">
+              {formatCurrency(totalInterestEarned)}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Avg rate: {averageInterestRate.toFixed(2)}%
             </p>
           </div>
         </div>
@@ -439,7 +471,7 @@ function CollectiveInvestments() {
         {/* Investments Table */}
         {filteredInvestments.length === 0 ? (
           <div className="bg-white border border-gray-200 p-12 text-center">
-            <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <Wallet className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No investments found</h3>
             <p className="text-gray-500 text-sm mb-4">
               Try adjusting your filters or search criteria
@@ -461,28 +493,28 @@ function CollectiveInvestments() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Account Number
+                      ID
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total Units
+                      Amount Invested
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Unit Price
+                      Principal
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Valuation
+                      Interest Rate
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cash Balance
+                      Interest Earned
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Last Contribution
+                      Outstanding
                     </th>
                     <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Payment Frequency
+                      Trade Date
                     </th>
                     <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Investment Date
+                      Maturity Date
                     </th>
                     <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -490,69 +522,66 @@ function CollectiveInvestments() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredInvestments.map((investment, index) => {
-                    const valuation = calculateValuation(investment);
+                  {filteredInvestments.map((investment) => {
+                    const daysToMaturity = calculateDaysToMaturity(investment.maturityDate);
+                    const mature = isMatured(investment.maturityDate);
 
                     return (
-                      <tr key={index} className="hover:bg-gray-50 transition-colors">
+                      <tr key={investment.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {investment.accountNumber || "N/A"}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              Ref: {investment.refNo || "N/A"}
-                            </p>
-                            {investment.lastValuationDate && (
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                Valued: {formatDate(investment.lastValuationDate)}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="text-sm text-gray-700 font-mono">
-                            {investment.totalUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                          <span className="text-sm font-medium text-gray-900">
+                            #{investment.id}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-sm text-gray-900 font-medium">
-                            {formatCurrency(investment.unitPrice)}
+                          <span className="text-sm text-gray-700 font-medium">
+                            {formatCurrency(investment.amountInvested)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="text-sm text-gray-900 font-semibold">
-                            {formatCurrency(valuation)}
+                            {formatCurrency(investment.principalAmount)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-sm text-gray-700">
-                            {formatCurrency(investment.cashBalance || 0)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="text-right">
-                            <span className="text-sm text-gray-700">
-                              {formatCurrency(investment.lastTransactionAmount)}
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-sm font-semibold text-gray-900">
+                              {investment.interestRate}
                             </span>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              {formatDate(investment.lastContributionDate)}
-                            </p>
+                            <TrendingUp className="w-3 h-3 text-emerald-600" />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-sm font-medium text-emerald-600">
+                            {formatCurrency(investment.interestRateAmount)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-sm text-gray-700 font-medium">
+                            {formatCurrency(investment.totalOutstanding)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="text-sm text-gray-700">
+                            {formatDate(investment.tradeDate)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-sm text-gray-700">
+                              {formatDate(investment.maturityDate)}
+                            </span>
+                            {!mature && daysToMaturity > 0 && (
+                              <span className="text-xs text-gray-400 flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {daysToMaturity} days
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">
-                            {investment.paymentFrequency || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="text-xs text-gray-700">
-                            {formatDate(investment.investmentDate)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${getStatusBadgeClass(investment.status)}`}>
-                            {investment.status || "N/A"}
+                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${getMaturityBadgeClass(investment.maturityDate)}`}>
+                            {mature ? "Matured" : daysToMaturity <= 30 ? "Maturing Soon" : "Active"}
                           </span>
                         </td>
                       </tr>
@@ -579,4 +608,4 @@ function CollectiveInvestments() {
   );
 }
 
-export default CollectiveInvestments;
+export default DebtInvestments;

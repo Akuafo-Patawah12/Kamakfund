@@ -79,7 +79,7 @@ const url = import.meta.env.VITE_BASE_URL
     if (!userId) return;
 
 
-    fetch(`${url}/kamakfund/rest/kamak/customer/${userId}/accounts`, {
+    fetch(`http://localhost:8090/kamakfund/rest/kamak/customer/${userId}/accounts`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -106,7 +106,7 @@ const url = import.meta.env.VITE_BASE_URL
     setTransactions([]);
     
     try {
-      const res = await fetch(`${url}/kamakfund/rest/kamak/customer/${userId}/account/${account.accountId}/transactions`, {
+      const res = await fetch(`http://localhost:8090/kamakfund/rest/kamak/customer/${userId}/account/${account.accountId}/transactions`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -187,12 +187,7 @@ const url = import.meta.env.VITE_BASE_URL
     return 'text-red-600';
   };
 
-  const getTransactionType = (creditAmount: number) => {
-    if (creditAmount > 0) {
-      return 'Credit';
-    }
-    return 'Debit';
-  };
+  
 
   if (loading) {
     return (
@@ -421,7 +416,7 @@ const url = import.meta.env.VITE_BASE_URL
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Account Type</p>
+                  <p className="text-xs text-gray-500 mb-1">Account Name</p>
                   <p className="text-sm font-medium text-gray-900">{selectedAccount?.accountType}</p>
                 </div>
                 <div>
@@ -458,7 +453,6 @@ const url = import.meta.env.VITE_BASE_URL
                         <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                         <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Narration</th>
                         <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
-                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                         <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Debit</th>
                         <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Credit</th>
                         <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
@@ -482,14 +476,7 @@ const url = import.meta.env.VITE_BASE_URL
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
                             {txn.referenceNumber || 'N/A'}
                           </td>
-                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
-                            <div className="flex items-center gap-2">
-                              {getTransactionIcon(txn.creditAmount)}
-                              <span className={getTransactionColor(txn.creditAmount)}>
-                                {getTransactionType(txn.creditAmount)}
-                              </span>
-                            </div>
-                          </td>
+                          
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-red-600">
                             {txn.debitAmount > 0 ? formatCurrency(txn.debitAmount) : '-'}
                           </td>

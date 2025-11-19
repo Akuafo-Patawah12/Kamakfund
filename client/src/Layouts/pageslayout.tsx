@@ -10,6 +10,11 @@ import FixedIncome from '../Pages/Investment/fixedIncome';
 import BondInvestments from '../Pages/Investment/bond';
 import NonFixedInvestments from '../Pages/Investment/nonFixedInvestment';
 import CollectiveInvestments from '../Pages/Financial/collectiveInvestment';
+import RealEstateInvestments from '../Pages/Other Investments/realEstate';
+import DebtInvestments from '../Pages/Other Investments/debtInvestment';
+import PrivateEquityInvestments from '../Pages/Other Investments/privateEquity';
+import CommercialPaperInvestments from '../Pages/Other Investments/commercialPaper';
+import ConsolidatedView from '../Pages/Management/consolidatedView';
 
 const Layout: React.FC = () => {
   const location = useLocation();
@@ -25,7 +30,7 @@ const Layout: React.FC = () => {
   };
 
   return (
-    <div className="flex w-full bg-yellow-200">
+    <div className="flex w-full ">
       {/* Overlay for mobile */}
       {isSidebarOpen && (
         <div
@@ -65,6 +70,16 @@ const Layout: React.FC = () => {
           <Route path="/investment/fixedIncome" element={<FixedIncome />} />
           <Route path="/investment/nonFixedIncome" element={<NonFixedInvestments/>} />
           <Route path="/investment/bonds" element={<BondInvestments/>} />
+
+          {/* Other Investments Route */}
+          <Route path='/other+investment/realEstateInvestment' element={<RealEstateInvestments/>} />
+          <Route path="/other+investment/debtInvestment"  element={<DebtInvestments/>}  />
+          <Route path="/other+investment/private-equity-investment" element={<PrivateEquityInvestments/>} />
+          <Route path="/other+investment/commercial-paper-investment" element={<CommercialPaperInvestments/>} />
+
+
+          {/* Management Route */}
+          <Route path="/management/consolidated-view" element={<ConsolidatedView />} />
 
         </Routes>
       </main>

@@ -5,6 +5,7 @@ interface MoneyMarketInvestment {
   investmentDate: string;
   maturityDate: string | null;
   prinipal: number; // Note: backend has typo "prinipal" instead of "principal"
+  interestAmount: number;
   currentValue: number;
   interestRate: number;
   security: string;
@@ -106,6 +107,7 @@ const FixedIncome: React.FC = () => {
     });
   };
 
+
   const calculateDaysToMaturity = (maturityDate: string | null): number | null => {
     if (!maturityDate) return null;
     const today = new Date();
@@ -185,8 +187,9 @@ const FixedIncome: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Security</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Security Name</th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Principal</th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Interest Amount</th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Face Value</th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Current Value</th>
                   <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Interest Rate</th>
@@ -218,6 +221,9 @@ const FixedIncome: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className="text-sm text-gray-700">{formatCurrency(inv.prinipal)}</span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-sm text-gray-700">{formatCurrency(inv.interestAmount)}</span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className="text-sm text-gray-700">{formatCurrency(inv.faceValue)}</span>

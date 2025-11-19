@@ -140,7 +140,7 @@ const Profile: React.FC = () => {
 
     const handleSaveAddress = async () => {
         try {
-            const response = await fetch('http://localhost:8090/kamakfund/rest/kamak/customer/profile/edit', {
+            const response = await fetch(`http://localhost:8090/kamakfund/rest/kamak/customer/${userId}/profile/edit`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -299,7 +299,7 @@ const Profile: React.FC = () => {
                                     </button>
                                     <button
                                         onClick={handleSaveAddress}
-                                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                                        className="px-4 py-2 text-sm font-medium text-stone-700 bg-slate-300 hover:bg-blue-700 rounded-lg transition-colors"
                                     >
                                         Save
                                     </button>

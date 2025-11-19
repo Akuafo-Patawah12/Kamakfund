@@ -54,7 +54,7 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
   const [user, setUser] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = localStorage.getItem("fullName");
     if (storedUser) {
       setUser(storedUser);
     }
@@ -85,10 +85,10 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
     id: "other_investment",
     title: "Other Investment",
     items: [
-      { name: "Commercial Paper", icon: FileText },
-      { name: "Real Estate Property", icon: Building2 },
-      { name: "Debt Investment", icon: ReceiptText },
-      { name: "Private Equity Investment", icon: Briefcase },
+      { name: "Commercial Paper", icon: FileText , path:"/u/other+investment/commercial-paper-investment" },
+      { name: "Real Estate Property", icon: Building2, path:"/u/other+investment/realEstateInvestment"},
+      { name: "Debt Investment", icon: ReceiptText , path:"/u/other+investment/debtInvestment"},
+      { name: "Private Equity Investment", icon: Briefcase , path: "/u/other+investment/private-equity-investment"},
     ],
   },
 
@@ -97,7 +97,7 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
     title: "Management",
     items: [
       { name: "Profile", icon: User, path: "/u/profile" },
-      { name: "Consolidated view", icon: LayoutDashboard },
+      { name: "Consolidated view", icon: LayoutDashboard , path:"/u/management/consolidated-view"},
     ],
   },
 

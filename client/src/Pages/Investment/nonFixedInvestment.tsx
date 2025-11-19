@@ -352,7 +352,7 @@ function NonFixedInvestments() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Positions
+              Investments Owned
             </p>
             <p className="text-2xl font-semibold text-gray-900">{filteredEquities.length}</p>
           </div>
@@ -399,7 +399,7 @@ function NonFixedInvestments() {
         {filteredEquities.length === 0 ? (
           <div className="bg-white border border-gray-200 p-12 text-center">
             <Filter className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No positions found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No investments found</h3>
             <p className="text-gray-500 text-sm mb-4">
               Try adjusting your filters or search criteria
             </p>
@@ -420,7 +420,7 @@ function NonFixedInvestments() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Security
+                      Security Name
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Quantity

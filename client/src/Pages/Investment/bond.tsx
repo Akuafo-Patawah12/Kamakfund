@@ -408,7 +408,7 @@ function BondInvestments() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Holdings
+              Number of Bonds
             </p>
             <p className="text-2xl font-semibold text-gray-900">{filteredBonds.length}</p>
           </div>
@@ -477,7 +477,7 @@ function BondInvestments() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Security
+                      Security Name
                     </th>
                     <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Face Value
