@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 
 import AdvancedSidebarNav from '../Components/Sidebar';
-import Profile from '../Pages/Profile';
+import Profile from '../Pages/Management/Profile';
 import Header from '../Components/Header';
 import Dashboard from '../Pages/Dashoard';
 import Account from '../Pages/Financial/Account';

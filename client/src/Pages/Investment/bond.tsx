@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Filter, X, ChevronDown, Calendar } from "lucide-react";
 
 interface Bond {
@@ -236,10 +236,18 @@ function BondInvestments() {
 
   const totalValue = filteredBonds.reduce((sum, bond) => sum + (bond.currentValue || 0), 0);
   const totalFaceValue = filteredBonds.reduce((sum, bond) => sum + (bond.faceValue || 0), 0);
-  const avgCoupon = filteredBonds.length > 0 
-    ? (filteredBonds.reduce((sum, bond) => sum + (bond.couponRate || 0), 0) / filteredBonds.length).toFixed(2) 
-    : "0.00";
+ 
   const totalNextCoupon = filteredBonds.reduce((sum, bond) => sum + (bond.nextCoupon || 0), 0);
+
+  const totalCoupon = filteredBonds.reduce(
+  (sum, bond) => sum + (
+    bond.faceValue * (bond.couponRate / 100) * (bond.tenorInDays / 365)
+  ),
+  0
+);
+
+
+  
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -443,9 +451,9 @@ function BondInvestments() {
 
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Avg. Coupon Rate
+              Total Coupon
             </p>
-            <p className="text-2xl font-semibold text-gray-900">{avgCoupon}%</p>
+            <p className="text-2xl font-semibold text-gray-900">{formatCurrency(totalCoupon)}</p>
             <p className="text-xs text-gray-500 mt-1">
               Next: {formatCurrency(totalNextCoupon)}
             </p>

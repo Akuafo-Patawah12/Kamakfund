@@ -141,9 +141,7 @@ const FixedIncome: React.FC = () => {
 
   const totalPrincipal = investments.reduce((sum, inv) => sum + (inv.prinipal || 0), 0);
   const totalValue = investments.reduce((sum, inv) => sum + (inv.currentValue || 0), 0);
-  const avgInterestRate = investments.length > 0 
-    ? (investments.reduce((sum, inv) => sum + (inv.interestRate || 0), 0) / investments.length).toFixed(2) 
-    : "0.00";
+  const totalInterestAmount = investments.reduce((sum, inv) => sum + (inv.interestAmount || 0), 0);
   const totalGains = totalValue - totalPrincipal;
 
   return (
@@ -176,8 +174,8 @@ const FixedIncome: React.FC = () => {
           </div>
 
           <div className="bg-white border border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Avg. Interest Rate</p>
-            <p className="text-2xl font-semibold text-gray-900">{avgInterestRate}%</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Total Interest Amount</p>
+            <p className="text-2xl font-semibold text-gray-900">{formatCurrency(totalInterestAmount)}</p>
           </div>
         </div>
 

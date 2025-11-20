@@ -200,14 +200,8 @@ function CollectiveInvestments() {
     return "bg-blue-100 text-blue-700";
   };
 
-  const getPaymentStatusBadgeClass = (status: string): string => {
-    if (!status) return "bg-gray-100 text-gray-700";
-    const statusLower = status.toLowerCase();
-    if (statusLower === "paid" || statusLower === "current") return "bg-emerald-100 text-emerald-700";
-    if (statusLower === "overdue" || statusLower === "late") return "bg-red-100 text-red-700";
-    if (statusLower === "pending") return "bg-yellow-100 text-yellow-700";
-    return "bg-gray-100 text-gray-700";
-  };
+
+  
 
   if (loading) {
     return (

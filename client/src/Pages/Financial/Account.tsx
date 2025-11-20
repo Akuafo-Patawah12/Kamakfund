@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, ArrowUpRight, TrendingUp, Clock, ChevronRight,  ArrowDownLeft, ArrowUpLeft } from 'lucide-react';
+import { Eye, EyeOff, ArrowUpRight, TrendingUp, Clock, ChevronRight } from 'lucide-react';
 
 
 
@@ -79,7 +79,7 @@ const url = import.meta.env.VITE_BASE_URL
     if (!userId) return;
 
 
-    fetch(`http://localhost:8090/kamakfund/rest/kamak/customer/${userId}/accounts`, {
+    fetch(`${url}/kamakfund/rest/kamak/customer/${userId}/accounts`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -173,19 +173,7 @@ const url = import.meta.env.VITE_BASE_URL
     });
   };
 
-  const getTransactionIcon = (creditAmount: number) => {
-    if (creditAmount > 0) {
-      return <ArrowDownLeft className="w-5 h-5 text-green-600" />;
-    }
-    return <ArrowUpLeft className="w-5 h-5 text-red-600" />;
-  };
-
-  const getTransactionColor = (creditAmount: number) => {
-    if (creditAmount > 0) {
-      return 'text-green-600';
-    }
-    return 'text-red-600';
-  };
+  
 
   
 

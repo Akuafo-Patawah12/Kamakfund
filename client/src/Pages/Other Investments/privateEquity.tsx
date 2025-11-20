@@ -518,7 +518,7 @@ function PrivateEquityInvestments() {
           </div>
 
           <div className="bg-white border border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+            <p className="text-xs  text-gray-500 uppercase tracking-wider mb-2">
               Total Commitment
             </p>
             <p className="text-2xl font-semibold text-gray-900">
