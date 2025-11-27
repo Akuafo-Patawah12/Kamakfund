@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import { Search, Filter, X, ChevronDown, TrendingUp, Briefcase, Award } from "lucide-react";
 
 interface PrivateEquityInvestment {
@@ -106,10 +106,7 @@ function PrivateEquityInvestments() {
     fetchInvestments();
   }, [userId, url]);
 
-  // Calculate unrealized value
-  const calculateUnrealizedValue = (investment: PrivateEquityInvestment): number => {
-    return investment.netAssetValue - investment.capitalCalled + investment.capitalReturned;
-  };
+ 
 
   // Calculate percentage called
   const calculatePercentageCalled = (investment: PrivateEquityInvestment): number => {
@@ -281,8 +278,6 @@ function PrivateEquityInvestments() {
 
   const totalCommitment = filteredInvestments.reduce((sum, inv) => sum + inv.commitmentAmount, 0);
   const totalCalled = filteredInvestments.reduce((sum, inv) => sum + inv.capitalCalled, 0);
-  const totalReturned = filteredInvestments.reduce((sum, inv) => sum + inv.capitalReturned, 0);
-  const totalDistributions = filteredInvestments.reduce((sum, inv) => sum + inv.distributionsReceived, 0);
   const totalNAV = filteredInvestments.reduce((sum, inv) => sum + inv.netAssetValue, 0);
   const averageTVPI = filteredInvestments.length > 0 
     ? filteredInvestments.reduce((sum, inv) => sum + inv.tvpiMultiple, 0) / filteredInvestments.length 
@@ -290,7 +285,7 @@ function PrivateEquityInvestments() {
   const averageDPI = filteredInvestments.length > 0 
     ? filteredInvestments.reduce((sum, inv) => sum + inv.dpiMultiple, 0) / filteredInvestments.length 
     : 0;
-  const activeInvestments = filteredInvestments.filter(inv => inv.status?.toLowerCase() === "active").length;
+  const totalInvestments = filteredInvestments.length;
 
   // Get unique values for filter dropdowns
   const uniqueStatuses = Array.from(new Set(investments.map(inv => inv.status).filter(Boolean)));
@@ -509,11 +504,11 @@ function PrivateEquityInvestments() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Active Funds
+              Total Investment
             </p>
-            <p className="text-2xl font-semibold text-gray-900">{activeInvestments}</p>
+            <p className="text-2xl font-semibold text-gray-900">{totalInvestments}</p>
             <p className="text-xs text-gray-500 mt-1">
-              of {filteredInvestments.length} total
+              of {investments.length} total
             </p>
           </div>
 
@@ -521,10 +516,10 @@ function PrivateEquityInvestments() {
             <p className="text-xs  text-gray-500 uppercase tracking-wider mb-2">
               Total Commitment
             </p>
-            <p className="text-2xl font-semibold text-gray-900">
+            <p className="text-2xl font-semibold text-gray-900 wrap-break-word overflow-hidden">
               {formatCurrency(totalCommitment)}
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1 wrap-break-word overflow-hidden">
               Called: {formatCurrency(totalCalled)}
             </p>
           </div>
@@ -533,7 +528,7 @@ function PrivateEquityInvestments() {
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
               Net Asset Value
             </p>
-            <p className="text-2xl font-semibold text-gray-900">
+            <p className="text-2xl font-semibold text-gray-900 wrap-break-word overflow-hidden">
               {formatCurrency(totalNAV)}
             </p>
           </div>

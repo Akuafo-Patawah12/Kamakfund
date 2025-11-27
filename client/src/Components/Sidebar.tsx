@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   User,
   Wallet,
@@ -48,7 +49,7 @@ interface MenuSection {
 
 
 export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavProps) {
-  const [activeItem, setActiveItem] = useState('Account');
+  const [activeItem, setActiveItem] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedSections, setExpandedSections] = useState(['financial', 'tools']);
   const [user, setUser] = useState<string | null>(null);
@@ -85,10 +86,10 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
     id: "other_investment",
     title: "Other Investment",
     items: [
-      { name: "Commercial Paper", icon: FileText , path:"/u/other+investment/commercial-paper-investment" },
-      { name: "Real Estate Property", icon: Building2, path:"/u/other+investment/realEstateInvestment"},
-      { name: "Debt Investment", icon: ReceiptText , path:"/u/other+investment/debtInvestment"},
-      { name: "Private Equity Investment", icon: Briefcase , path: "/u/other+investment/private-equity-investment"},
+      { name: "Commercial Paper", icon: FileText , path:"/u/other-investment/commercial-paper-investment" },
+      { name: "Real Estate Property", icon: Building2, path:"/u/other-investment/realEstateInvestment"},
+      { name: "Debt Investment", icon: ReceiptText , path:"/u/other-investment/debtInvestment"},
+      { name: "Private Equity Investment", icon: Briefcase , path: "/u/other-investment/private-equity-investment"},
     ],
   },
 
@@ -134,6 +135,15 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
     );
   };
 
+ 
+ const location = useLocation();
+
+ useEffect(() => {
+   const pageName = location.state?.pageName;
+    if (pageName) {
+      setActiveItem(pageName);
+    }
+  }, [location.state]);
   const handleItemClick = (itemName: string) => {
     setActiveItem(itemName);
     // Call onNavigate to close sidebar on mobile

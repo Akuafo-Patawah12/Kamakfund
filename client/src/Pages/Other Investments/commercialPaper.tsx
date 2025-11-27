@@ -279,7 +279,7 @@ function CommercialPaperInvestments() {
   const averageInterestRate = filteredInvestments.length > 0 
     ? filteredInvestments.reduce((sum, inv) => sum + inv.interestRate, 0) / filteredInvestments.length 
     : 0;
-  const activeInvestments = filteredInvestments.filter(inv => getMaturityStatus(inv) === "active").length;
+  const totalInvestments = filteredInvestments.length;
   const maturingSoon = filteredInvestments.filter(inv => getMaturityStatus(inv) === "maturing-soon").length;
 
   // Get unique values for filter dropdowns
@@ -292,11 +292,9 @@ function CommercialPaperInvestments() {
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-2">
             <DollarSign className="w-8 h-8 text-gray-700" />
-            <h1 className="text-3xl font-semibold text-gray-900">
-              Commercial Paper Investments
-            </h1>
+           
           </div>
-          <p className="text-gray-500 text-sm">Short-term fixed income securities portfolio</p>
+          <h1 className="text-gray-500 text-lg">Short-term fixed income securities portfolio</h1>
         </div>
 
         {/* Search and Filter Bar */}
@@ -472,9 +470,9 @@ function CommercialPaperInvestments() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Active Investments
+              Total Investments
             </p>
-            <p className="text-2xl font-semibold text-gray-900">{activeInvestments}</p>
+            <p className="text-2xl font-semibold text-gray-900">{totalInvestments}</p>
             <p className="text-xs text-gray-500 mt-1">
               {maturingSoon > 0 && `${maturingSoon} maturing soon`}
             </p>

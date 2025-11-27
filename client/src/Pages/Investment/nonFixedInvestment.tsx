@@ -221,17 +221,15 @@ function NonFixedInvestments() {
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-3xl font-semibold text-gray-900 mb-1">
-            Non-Fixed Income Investments
-          </h1>
-          <p className="text-gray-500 text-sm">Non-fixed income portfolio overview</p>
+          
+          <h1 className="text-gray-500 text-lg">Non-fixed income portfolio overview</h1>
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-white border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+          <div className="flex flex-col  md:flex-row gap-4">
             {/* Search Input */}
-            <div className="flex-1 relative">
+            <div className="flex-1  relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
@@ -350,14 +348,14 @@ function NonFixedInvestments() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white border border-gray-200 p-5">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
               Investments Owned
             </p>
             <p className="text-2xl font-semibold text-gray-900">{filteredEquities.length}</p>
           </div>
 
-          <div className="bg-white border border-gray-200 p-5">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
               Total Shares
             </p>
@@ -366,7 +364,7 @@ function NonFixedInvestments() {
             </p>
           </div>
 
-          <div className="bg-white border border-gray-200 p-5">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
               Total Cost
             </p>
@@ -375,7 +373,7 @@ function NonFixedInvestments() {
             </p>
           </div>
 
-          <div className="bg-white border border-gray-200 p-5">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
               Current Value
             </p>
@@ -414,7 +412,7 @@ function NonFixedInvestments() {
             )}
           </div>
         ) : (
-          <div className="bg-white border border-gray-200">
+          <div className="bg-white rounded-xl border border-gray-200">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>

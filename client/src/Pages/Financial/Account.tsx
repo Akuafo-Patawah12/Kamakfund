@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Eye, EyeOff, ArrowUpRight, TrendingUp, Clock, ChevronRight } from 'lucide-react';
+import { Eye, EyeOff, ArrowUpRight,ArrowDownLeft, TrendingUp, Clock, ChevronRight } from 'lucide-react';
 
 
 
@@ -265,7 +265,8 @@ const url = import.meta.env.VITE_BASE_URL
 
         {/* Horizontal Scrolling Accounts */}
         {accounts.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
+          <div className=" bg-white rounded-xl p-12 text-center border border-gray-200">
+           
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -275,8 +276,11 @@ const url = import.meta.env.VITE_BASE_URL
             <p className="text-sm text-gray-500">You don't have any accounts yet</p>
           </div>
         ) : (
-          <div className="relative -mx-4 sm:mx-0">
-            <div className="flex gap-4 overflow-x-auto px-4 sm:px-0 pb-4 scroll-smooth snap-x snap-mandatory custom-scrollbar">
+          <div className="relative  ">
+
+            <div className=" flex gap-4 overflow-x-auto px-4 sm:px-0 pb-4 scroll-smooth snap-x snap-mandatory custom-scrollbar">
+
+                 
               {accounts.map((account) => {
                 const isVisible = visibleAccounts.has(account.accountId);
                 const isActive = selectedAccount?.accountId === account.accountId;
@@ -284,12 +288,57 @@ const url = import.meta.env.VITE_BASE_URL
                   <div
                     key={account.accountId}
                     onClick={() => fetchTransactions(account)}
-                    className={`min-w-[340px] shrink-0 bg-white rounded-xl border-2 transition-all duration-200 cursor-pointer snap-start group ${
+                    className={`min-w-[340px] relative shrink-0 overflow-hidden bg-white rounded-xl border-2 transition-all duration-200 cursor-pointer snap-start group ${
                       isActive 
-                        ? 'border-red-500 shadow-lg ring-2 ring-red-100' 
+                        ? 'border-red-400 shadow-lg ring-2 ring-red-100' 
                         : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                     }`}
                   >
+
+                      <div  className={`absolute size-35 -top-10 -right-7 rounded-full border ${
+                      isActive 
+                        ? 'border-red-200' 
+                        : 'border-stone-200 '
+                    }`}></div>
+                      <div  className={`absolute size-30 -top-10 -right-7 rounded-full border-[0.5px] ${
+                      isActive 
+                        ? 'border-red-200 ' 
+                        : 'border-stone-200 '
+                    }`}></div>
+                      <div  className={`absolute size-25 -top-10 -right-7 rounded-full border ${
+                      isActive 
+                        ? 'border-red-200' 
+                        : 'border-stone-200 '
+                    }`}></div>
+                    <div  className={`absolute size-20 -top-10 -right-7 rounded-full border ${
+                      isActive 
+                        ? 'border-red-200' 
+                        : 'border-stone-200 '
+                    }`}></div>
+
+                    <div  className={`absolute size-2 top-9 right-3 rounded-full border ${
+                      isActive 
+                        ? 'bg-red-200' 
+                        : 'bg-stone-200 '
+                    }`}></div>
+
+                    <div  className={`absolute size-2 top-11 right-12 rounded-full border ${
+                      isActive 
+                        ? 'bg-red-200' 
+                        : 'bg-stone-200 '
+                    }`}></div>
+
+                    <div  className={`absolute size-2 top-11 right-20 rounded-full border ${
+                      isActive 
+                        ? 'bg-red-200' 
+                        : 'bg-stone-200 '
+                    }`}></div>
+
+                    <div  className={`absolute size-2 top-24 right-7 rounded-full border ${
+                      isActive 
+                        ? 'bg-red-200' 
+                        : 'bg-stone-200 '
+                    }`}></div>
                     <div className="p-6">
                       {/* Card Header */}
                       <div className="flex items-start justify-between mb-6">
@@ -328,7 +377,7 @@ const url = import.meta.env.VITE_BASE_URL
                       <div className="mb-6">
                         <p className="text-xs text-gray-500 mb-1">Available Balance</p>
                         <div className="flex items-baseline gap-2">
-                          <span className="text-3xl font-semibold text-gray-900">
+                          <span className="text-xl font-semibold text-gray-900">
                             {formatCurrency(account.availableBalance)}
                           </span>
                           <span className="text-lg text-gray-500 font-medium">{account.currencyCode}</span>
@@ -455,11 +504,22 @@ const url = import.meta.env.VITE_BASE_URL
                               <div className="text-xs text-gray-500">Value: {txn.valueDate}</div>
                             )}
                           </td>
-                          <td className="px-4 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className=" flex gap-3 px-4 sm:px-6 py-4 text-sm text-gray-900">
+                            {txn.debitAmount > 0 ? (
+                              <div className="shrink-0 w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center mt-0.5">
+                                <ArrowUpRight className="w-4 h-4 text-red-600" />
+                              </div>
+                            ) : (
+                              <div className="shrink-0 w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center mt-0.5">
+                                <ArrowDownLeft className="w-4 h-4 text-green-600" />
+                              </div>
+                            )}
+                            <div>
                             <div className="max-w-xs">{txn.narration || 'N/A'}</div>
                             {txn.approver && (
                               <div className="text-xs text-gray-500 mt-1">Approved by: {txn.approver}</div>
                             )}
+                            </div>
                           </td>
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
                             {txn.referenceNumber || 'N/A'}

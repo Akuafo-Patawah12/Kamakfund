@@ -254,10 +254,7 @@ function BondInvestments() {
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-3xl font-semibold text-gray-900 mb-1">
-            Tradable Bond Investments
-          </h1>
-          <p className="text-gray-500 text-sm">Fixed income portfolio overview</p>
+          <h1 className="text-gray-500 text-sm">Fixed income portfolio overview</h1>
         </div>
 
         {/* Search and Filter Bar */}
@@ -318,9 +315,9 @@ function BondInvestments() {
                   <select
                     value={filterPerformance}
                     onChange={(e) => setFilterPerformance(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2 text-stone-600 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   >
-                    <option value="all">All Bonds</option>
+                    <option value="allN" className="text-stone-600">All Bonds</option>
                     <option value="premium">Trading at Premium</option>
                     <option value="discount">Trading at Discount</option>
                   </select>
@@ -334,7 +331,7 @@ function BondInvestments() {
                   <select
                     value={filterMaturity}
                     onChange={(e) => setFilterMaturity(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2 text-stone-600 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   >
                     <option value="all">All Maturities</option>
                     <option value="3months">Within 3 Months</option>
@@ -355,7 +352,7 @@ function BondInvestments() {
                     placeholder="0.00"
                     value={filterMinCoupon}
                     onChange={(e) => setFilterMinCoupon(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2  border text-stone-600 border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
 
@@ -370,7 +367,7 @@ function BondInvestments() {
                     placeholder="No limit"
                     value={filterMaxCoupon}
                     onChange={(e) => setFilterMaxCoupon(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2  text-stone-600 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
 
@@ -384,7 +381,7 @@ function BondInvestments() {
                     placeholder="0"
                     value={filterMinValue}
                     onChange={(e) => setFilterMinValue(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2 text-stone-600 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
 
@@ -398,7 +395,7 @@ function BondInvestments() {
                     placeholder="No limit"
                     value={filterMaxValue}
                     onChange={(e) => setFilterMaxValue(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2 text-stone-600 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
               </div>

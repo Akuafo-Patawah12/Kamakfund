@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { TrendingUp, DollarSign, Briefcase, PieChart, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+interface Investment {
+  principal: number;
+  totalInvestments: number;
+  faceValue: number;
+  name: string;
+  currentValue: number;
+  link: string;
+}
 
 interface InvestmentSummary {
   totalCurrentValue: number;
@@ -10,15 +20,20 @@ interface InvestmentSummary {
 
 interface ApiResponse {
   status: number;
-  data: InvestmentSummary;
+  data: {
+    investments: Investment[];
+    totals: InvestmentSummary;
+  };
   message?: string;
 }
 
 function ConsolidatedView() {
   const [summary, setSummary] = useState<InvestmentSummary | null>(null);
+  const [investments, setInvestments] = useState<Investment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>("");
+  const navigate = useNavigate();
 
   const url = import.meta.env.VITE_BASE_URL;
 
@@ -41,7 +56,6 @@ function ConsolidatedView() {
     }
   }, []);
 
-  // FETCH INVESTMENT SUMMARY WHEN userId IS LOADED
   useEffect(() => {
     if (!userId) return;
 
@@ -63,9 +77,11 @@ function ConsolidatedView() {
         }
 
         const data: ApiResponse = await response.json();
+        console.log("Fetched investment summary data:", data);
 
         if (data.status === 1) {
-          setSummary(data.data);
+          setSummary(data.data.totals);
+          setInvestments(data.data.investments);
         } else {
           setError(data.message || "Failed to fetch investment summary");
         }
@@ -168,25 +184,13 @@ function ConsolidatedView() {
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="w-5 h-5 text-gray-500" />
                 <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">
-                  Total Portfolio Value
+                  Total Current Value
                 </p>
               </div>
               <p className="text-3xl font-bold text-gray-900 mb-4">
                 {formatCurrency(summary.totalCurrentValue)}
               </p>
-              <div className="flex items-center gap-2">
-                {profit ? (
-                  <ArrowUpRight className="w-5 h-5 text-emerald-600" />
-                ) : (
-                  <ArrowDownRight className="w-5 h-5 text-red-600" />
-                )}
-                <span className={`text-lg font-semibold ${profit ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {formatCurrency(Math.abs(gainLoss))}
-                </span>
-                <span className={`text-sm ${profit ? 'text-emerald-600' : 'text-red-600'}`}>
-                  ({profit ? '+' : ''}{gainLossPercentage.toFixed(2)}%)
-                </span>
-              </div>
+              
               <p className="text-xs text-gray-500 mt-2">
                 {profit ? 'Total gain' : 'Total loss'} from principal
               </p>
@@ -227,8 +231,7 @@ function ConsolidatedView() {
                     Total Face Value
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    Bonds & Commercial Paper
-                  </p>
+                    For all investments                  </p>
                 </div>
               </div>
             </div>
@@ -270,132 +273,96 @@ function ConsolidatedView() {
           </div>
         </div>
 
-        {/* Performance Breakdown */}
-        <div className="bg-white border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Performance Breakdown</h2>
-          
-          <div className="space-y-4">
-            {/* Current Value vs Principal */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Current Value vs Principal</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {((summary.totalCurrentValue / summary.totalPrincipal) * 100).toFixed(2)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2.5">
-                <div
-                  className={`h-2.5 rounded-full ${profit ? 'bg-emerald-600' : 'bg-red-600'}`}
-                  style={{
-                    width: `${Math.min(((summary.totalCurrentValue / summary.totalPrincipal) * 100), 100)}%`
-                  }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Face Value Coverage */}
-            {summary.totalFaceValue > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600">Face Value Coverage</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {((summary.totalFaceValue / summary.totalPrincipal) * 100).toFixed(2)}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2.5">
-                  <div
-                    className="bg-purple-600 h-2.5 rounded-full"
-                    style={{
-                      width: `${Math.min(((summary.totalFaceValue / summary.totalPrincipal) * 100), 100)}%`
-                    }}
-                  ></div>
-                </div>
-              </div>
-            )}
-
-            {/* Average Value per Investment */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Avg Value per Investment</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {formatCurrency(summary.totalCurrentValue / summary.totalInvestments)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Key Metrics Summary Table */}
+        {/* Investment Breakdown Table */}
         <div className="bg-white border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Detailed Metrics</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Investment Breakdown</h2>
+            <p className="text-xs text-gray-500 mt-1">Detailed view of all investment accounts</p>
           </div>
+          
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
+              <thead className="bg-gray-50">
+                <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Metric
+                    Investment Type
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Value
+                    Principal
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    % of Principal
+                    Current Value
+                  </th>
+                  
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Face Value
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Holdings
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                <tr className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                    Total Current Value
+              <tbody className="bg-white divide-y divide-gray-200">
+                {investments.map((investment, index) => (
+                  <tr
+  key={index}
+  className="hover:bg-gray-50 transition-colors cursor-pointer"
+  onClick={() => navigate(investment.link)}
+>
+  <td className="px-6 py-4 whitespace-nowrap">
+    <div className="text-sm font-medium text-gray-900">{investment.name}</div>
+  </td>
+  <td className="px-6 py-4 whitespace-nowrap text-right">
+    <div className="text-sm text-gray-600">
+      {formatCurrency(investment.principal)}
+    </div>
+  </td>
+  <td className="px-6 py-4 whitespace-nowrap text-right">
+    <div className="text-sm font-semibold text-gray-900">
+      {formatCurrency(investment.currentValue)}
+    </div>
+  </td>
+  
+  <td className="px-6 py-4 whitespace-nowrap text-right">
+    <div className="text-sm text-gray-600">
+      {formatCurrency(investment.faceValue)}
+    </div>
+  </td>
+  <td className="px-6 py-4 whitespace-nowrap text-right">
+    <div className="text-sm text-gray-600">
+      {formatNumber(investment.totalInvestments)}
+    </div>
+  </td>
+</tr>
+
+                ))}
+                {/* Total Row */}
+                <tr className="bg-gray-100 font-semibold">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-bold text-gray-900">TOTAL</div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 text-right font-semibold">
-                    {formatCurrency(summary.totalCurrentValue)}
+                  
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatCurrency(summary.totalPrincipal)}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-right">
-                    <span className={`font-medium ${profit ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {((summary.totalCurrentValue / summary.totalPrincipal) * 100).toFixed(2)}%
-                    </span>
+
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatCurrency(summary.totalCurrentValue)}
+                    </div>
                   </td>
-                </tr>
-                <tr className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                    Total Principal
+                  
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatCurrency(summary.totalFaceValue)}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 text-right font-semibold">
-                    {formatCurrency(summary.totalPrincipal)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 text-right">
-                    100.00%
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                    Total Face Value
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 text-right font-semibold">
-                    {formatCurrency(summary.totalFaceValue)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 text-right">
-                    {summary.totalPrincipal > 0 
-                      ? `${((summary.totalFaceValue / summary.totalPrincipal) * 100).toFixed(2)}%`
-                      : 'N/A'}
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50 transition-colors bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                    Gain / Loss
-                  </td>
-                  <td className="px-6 py-4 text-sm text-right">
-                    <span className={`font-semibold ${profit ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {profit ? '+' : ''}{formatCurrency(gainLoss)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-right">
-                    <span className={`font-medium ${profit ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {profit ? '+' : ''}{gainLossPercentage.toFixed(2)}%
-                    </span>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="text-sm font-bold text-gray-900">
+                      {formatNumber(summary.totalInvestments)}
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -403,33 +370,6 @@ function ConsolidatedView() {
           </div>
         </div>
 
-        {/* Investment Types Notice */}
-        <div className="mt-8 bg-blue-50 border border-blue-100 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-white text-xs font-bold">i</span>
-            </div>
-            <div>
-              <p className="text-sm text-blue-900 font-medium mb-1">Portfolio Composition</p>
-              <p className="text-xs text-blue-700 leading-relaxed">
-                This summary includes data from Money Market, Bonds, Equities, Collective Investments, 
-                Real Estate, Private Equity, Commercial Paper, and Debt instruments. Values are calculated 
-                based on current market valuations and reported NAV where applicable.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-6 text-right">
-          <p className="text-xs text-gray-400">
-            Last updated{" "}
-            {new Date().toLocaleString("en-US", {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}
-          </p>
-        </div>
       </div>
     </div>
   );

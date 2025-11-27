@@ -15,6 +15,7 @@ import DebtInvestments from '../Pages/Other Investments/debtInvestment';
 import PrivateEquityInvestments from '../Pages/Other Investments/privateEquity';
 import CommercialPaperInvestments from '../Pages/Other Investments/commercialPaper';
 import ConsolidatedView from '../Pages/Management/consolidatedView';
+import type { Layout } from 'lucide-react';
 
 const Layout: React.FC = () => {
   const location = useLocation();
@@ -72,10 +73,10 @@ const Layout: React.FC = () => {
           <Route path="/investment/bonds" element={<BondInvestments/>} />
 
           {/* Other Investments Route */}
-          <Route path='/other+investment/realEstateInvestment' element={<RealEstateInvestments/>} />
-          <Route path="/other+investment/debtInvestment"  element={<DebtInvestments/>}  />
-          <Route path="/other+investment/private-equity-investment" element={<PrivateEquityInvestments/>} />
-          <Route path="/other+investment/commercial-paper-investment" element={<CommercialPaperInvestments/>} />
+          <Route path='/other-investment/realEstateInvestment' element={<RealEstateInvestments/>} />
+          <Route path="/other-investment/debtInvestment"  element={<DebtInvestments/>}  />
+          <Route path="/other-investment/private-equity-investment" element={<PrivateEquityInvestments/>} />
+          <Route path="/other-investment/commercial-paper-investment" element={<CommercialPaperInvestments/>} />
 
 
           {/* Management Route */}

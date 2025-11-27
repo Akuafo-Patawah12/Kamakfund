@@ -251,7 +251,7 @@ function DebtInvestments() {
     ? filteredInvestments.reduce((sum, inv) => sum + inv.interestRate, 0) / filteredInvestments.length 
     : 0;
   const maturedInvestments = filteredInvestments.filter(inv => isMatured(inv.maturityDate)).length;
-  const activeInvestments = filteredInvestments.filter(inv => !isMatured(inv.maturityDate)).length;
+  const totalInvestments = filteredInvestments.length;
 
   // Get unique maturity years for filter dropdown
   const uniqueYears = Array.from(new Set(
@@ -429,9 +429,9 @@ function DebtInvestments() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Active Investments
+              Total Investments
             </p>
-            <p className="text-2xl font-semibold text-gray-900">{activeInvestments}</p>
+            <p className="text-2xl font-semibold text-gray-900">{totalInvestments}</p>
             <p className="text-xs text-gray-500 mt-1">
               {maturedInvestments} matured
             </p>

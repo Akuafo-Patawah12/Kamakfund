@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Search, Filter, X, ChevronDown, TrendingUp } from "lucide-react";
+import { Search, Filter, X, ChevronDown, TrendingUp, Wallet, PieChart,  DollarSign, Activity, RefreshCw, FileText } from "lucide-react";
 
 interface CollectiveInvestment {
   accountNumber: string;
@@ -9,6 +9,11 @@ interface CollectiveInvestment {
   lastTransactionAmount: number;
   paymentFrequency: string;
   investmentDate: string;
+  cost: number;
+  fees: number;
+  initial_price: number;
+  current_price: number;
+  gains_loss: number;
   status: string;
   refNo: string;
   lastValuationDate: string;
@@ -84,6 +89,7 @@ function CollectiveInvestments() {
         const data: ApiResponse = await response.json();
 
         if (data.status === 1) {
+          console.log(data.data)
           setInvestments(data.data);
           setFilteredInvestments(data.data);
         } else {
@@ -109,7 +115,6 @@ function CollectiveInvestments() {
   useEffect(() => {
     let filtered = [...investments];
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(
         (inv) =>
@@ -118,34 +123,28 @@ function CollectiveInvestments() {
       );
     }
 
-    // Status filter
     if (filterStatus !== "all") {
       filtered = filtered.filter((inv) => inv.status?.toLowerCase() === filterStatus.toLowerCase());
     }
 
-    // Payment status filter
     if (filterPaymentStatus !== "all") {
       filtered = filtered.filter((inv) => inv.paymentStatus?.toLowerCase() === filterPaymentStatus.toLowerCase());
     }
 
-    // Payment frequency filter
     if (filterPaymentFrequency !== "all") {
       filtered = filtered.filter((inv) => inv.paymentFrequency?.toLowerCase() === filterPaymentFrequency.toLowerCase());
     }
 
-    // Min valuation filter
     if (filterMinValuation) {
       const minVal = parseFloat(filterMinValuation);
       filtered = filtered.filter((inv) => calculateValuation(inv) >= minVal);
     }
 
-    // Max valuation filter
     if (filterMaxValuation) {
       const maxVal = parseFloat(filterMaxValuation);
       filtered = filtered.filter((inv) => calculateValuation(inv) <= maxVal);
     }
 
-    // Min units filter
     if (filterMinUnits) {
       const minUnits = parseFloat(filterMinUnits);
       filtered = filtered.filter((inv) => inv.totalUnits >= minUnits);
@@ -192,23 +191,20 @@ function CollectiveInvestments() {
   };
 
   const getStatusBadgeClass = (status: string): string => {
-    if (!status) return "bg-gray-100 text-gray-700";
+    if (!status) return "bg-slate-100 text-slate-700";
     const statusLower = status.toLowerCase();
-    if (statusLower === "active") return "bg-emerald-100 text-emerald-700";
-    if (statusLower === "inactive" || statusLower === "closed") return "bg-gray-100 text-gray-700";
-    if (statusLower === "pending") return "bg-yellow-100 text-yellow-700";
-    return "bg-blue-100 text-blue-700";
+    if (statusLower === "active") return "bg-emerald-50 text-emerald-700 border border-emerald-200";
+    if (statusLower === "inactive" || statusLower === "closed") return "bg-slate-100 text-slate-600 border border-slate-200";
+    if (statusLower === "pending") return "bg-amber-50 text-amber-700 border border-amber-200";
+    return "bg-blue-50 text-blue-700 border border-blue-200";
   };
-
-
-  
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="text-center">
-          <div className="inline-block w-12 h-12 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600 text-sm">Loading collective investments...</p>
+          <RefreshCw className="w-12 h-12 text-slate-400 mx-auto mb-4 animate-spin" />
+          <p className="text-slate-600 text-sm font-medium">Loading your investments...</p>
         </div>
       </div>
     );
@@ -216,10 +212,13 @@ function CollectiveInvestments() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="bg-white border border-red-200 rounded p-6 max-w-md">
-          <h3 className="text-red-600 text-lg font-medium mb-2">Error</h3>
-          <p className="text-gray-600 text-sm">{error}</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-red-100 p-8 max-w-md">
+          <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4">
+            <X className="w-6 h-6 text-red-600" />
+          </div>
+          <h3 className="text-slate-900 text-lg font-semibold mb-2">Unable to Load Investments</h3>
+          <p className="text-slate-600 text-sm">{error}</p>
         </div>
       </div>
     );
@@ -228,50 +227,100 @@ function CollectiveInvestments() {
   const totalValuation = filteredInvestments.reduce((sum, inv) => sum + calculateValuation(inv), 0);
   const totalCashBalance = filteredInvestments.reduce((sum, inv) => sum + (inv.cashBalance || 0), 0);
   const totalUnits = filteredInvestments.reduce((sum, inv) => sum + (inv.totalUnits || 0), 0);
-  const activeAccounts = filteredInvestments.filter(inv => inv.status?.toLowerCase() === "active").length;
+  const totalAccounts = filteredInvestments.length;
 
-  // Get unique values for filter dropdowns
   const uniqueStatuses = Array.from(new Set(investments.map(inv => inv.status).filter(Boolean)));
   const uniquePaymentStatuses = Array.from(new Set(investments.map(inv => inv.paymentStatus).filter(Boolean)));
   const uniqueFrequencies = Array.from(new Set(investments.map(inv => inv.paymentFrequency).filter(Boolean)));
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-semibold text-gray-900 mb-1">
-            Collective Investments
-          </h1>
-          <p className="text-gray-500 text-sm">Unit trust and mutual fund portfolio overview</p>
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center">
+              <PieChart className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Collective Investments</h1>
+              <p className="text-sm text-slate-600">Unit trust and mutual fund portfolio overview</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+                <Activity className="w-5 h-5 text-slate-700" />
+              </div>
+            </div>
+            <p className="text-sm text-slate-600 mb-1">Total Investment</p>
+            <p className="text-2xl font-bold text-slate-900">{totalAccounts}</p>
+            <p className="text-xs text-slate-500 mt-2">of {filteredInvestments.length} total accounts</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-slate-700" />
+              </div>
+            </div>
+            <p className="text-sm text-slate-600 mb-1">Total Units</p>
+            <p className="text-2xl font-bold text-slate-900">
+              {totalUnits.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-slate-700" />
+              </div>
+            </div>
+            <p className="text-sm text-slate-600 mb-1">Total Valuation</p>
+            <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalValuation)}</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-slate-700" />
+              </div>
+            </div>
+            <p className="text-sm text-slate-600 mb-1">Cash Balance</p>
+            <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalCashBalance)}</p>
+          </div>
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-white border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Search by account number or reference..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full pl-11 pr-4 py-2.5 text-stone-600 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-slate-50"
               />
             </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 border rounded text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 showFilters || hasActiveFilters
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100"
               }`}
             >
               <Filter className="w-4 h-4" />
               Filters
               {hasActiveFilters && (
-                <span className="bg-white text-gray-900 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                <span className="bg-white text-slate-900 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
                   {[searchTerm, filterStatus !== "all", filterPaymentStatus !== "all", filterPaymentFrequency !== "all", filterMinValuation, filterMaxValuation, filterMinUnits].filter(Boolean).length}
                 </span>
               )}
@@ -281,7 +330,7 @@ function CollectiveInvestments() {
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-2 px-5 py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 <X className="w-4 h-4" />
                 Reset
@@ -291,16 +340,16 @@ function CollectiveInvestments() {
 
           {/* Filter Panel */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-5 pt-5 border-t border-slate-200">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Account Status
                   </label>
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 text-stone-500 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   >
                     <option value="all">All Statuses</option>
                     {uniqueStatuses.map(status => (
@@ -310,13 +359,13 @@ function CollectiveInvestments() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Payment Status
                   </label>
                   <select
                     value={filterPaymentStatus}
                     onChange={(e) => setFilterPaymentStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 text-stone-500 border  border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   >
                     <option value="all">All Payment Statuses</option>
                     {uniquePaymentStatuses.map(status => (
@@ -326,13 +375,13 @@ function CollectiveInvestments() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Payment Frequency
                   </label>
                   <select
                     value={filterPaymentFrequency}
                     onChange={(e) => setFilterPaymentFrequency(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 text-stone-500 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   >
                     <option value="all">All Frequencies</option>
                     {uniqueFrequencies.map(freq => (
@@ -342,7 +391,7 @@ function CollectiveInvestments() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Min Valuation (GHS)
                   </label>
                   <input
@@ -350,12 +399,12 @@ function CollectiveInvestments() {
                     placeholder="0"
                     value={filterMinValuation}
                     onChange={(e) => setFilterMinValuation(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 text-stone-500 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Max Valuation (GHS)
                   </label>
                   <input
@@ -363,12 +412,12 @@ function CollectiveInvestments() {
                     placeholder="No limit"
                     value={filterMaxValuation}
                     onChange={(e) => setFilterMaxValuation(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 text-stone-500 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-2">
                     Min Units
                   </label>
                   <input
@@ -376,7 +425,7 @@ function CollectiveInvestments() {
                     placeholder="0"
                     value={filterMinUnits}
                     onChange={(e) => setFilterMinUnits(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 text-stone-500 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   />
                 </div>
               </div>
@@ -385,63 +434,28 @@ function CollectiveInvestments() {
         </div>
 
         {/* Results Count */}
-        <div className="mb-4 text-sm text-gray-600">
-          Showing {filteredInvestments.length} of {investments.length} accounts
-          {hasActiveFilters && " (filtered)"}
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white border border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Active Accounts
-            </p>
-            <p className="text-2xl font-semibold text-gray-900">{activeAccounts}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              of {filteredInvestments.length} total
-            </p>
-          </div>
-
-          <div className="bg-white border border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Units
-            </p>
-            <p className="text-2xl font-semibold text-gray-900">
-              {totalUnits.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-            </p>
-          </div>
-
-          <div className="bg-white border border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Valuation
-            </p>
-            <p className="text-2xl font-semibold text-gray-900">
-              {formatCurrency(totalValuation)}
-            </p>
-          </div>
-
-          <div className="bg-white border border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Cash Balance
-            </p>
-            <p className="text-2xl font-semibold text-gray-900">
-              {formatCurrency(totalCashBalance)}
-            </p>
-          </div>
+        <div className="mb-4 flex items-center gap-2 text-sm text-slate-600">
+          <FileText className="w-4 h-4" />
+          <span>
+            Showing <span className="font-semibold text-slate-900">{filteredInvestments.length}</span> of <span className="font-semibold text-slate-900">{investments.length}</span> accounts
+            {hasActiveFilters && " (filtered)"}
+          </span>
         </div>
 
         {/* Investments Table */}
         {filteredInvestments.length === 0 ? (
-          <div className="bg-white border border-gray-200 p-12 text-center">
-            <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No investments found</h3>
-            <p className="text-gray-500 text-sm mb-4">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <TrendingUp className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">No investments found</h3>
+            <p className="text-slate-600 text-sm mb-6">
               Try adjusting your filters or search criteria
             </p>
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded text-sm font-medium hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors shadow-sm"
               >
                 <X className="w-4 h-4" />
                 Clear All Filters
@@ -449,103 +463,151 @@ function CollectiveInvestments() {
             )}
           </div>
         ) : (
-          <div className="bg-white border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Account Number
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <div className="flex items-center gap-2">
+                        
+                        Investment Date
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total Units
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <div className="flex items-center gap-2">
+                        
+                        Account Details
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <div className="flex items-center justify-end gap-2">
+                        
+                        Units
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       Unit Price
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Valuation
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <div className="flex items-center justify-end gap-2">
+                        
+                        Valuation
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cash Balance
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <div className="flex items-center justify-end gap-2">
+                       
+                        Cash Balance
+                      </div>
                     </th>
-                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       Last Contribution
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Payment Frequency
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      Frequency
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Investment Date
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Cost</th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Initial Price</th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Current Price</th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Fees</th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Gains/Loss</th>
+                    
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       Status
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-slate-200">
                   {filteredInvestments.map((investment, index) => {
                     const valuation = calculateValuation(investment);
 
                     return (
-                      <tr key={index} className="hover:bg-gray-50 transition-colors">
+                      <tr key={index} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-slate-700 font-medium">
+                            {formatDate(investment.investmentDate)}
+                          </span>
+                        </td>
                         <td className="px-6 py-4">
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                               {investment.accountNumber || "N/A"}
                             </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
+                            <p className="text-xs text-slate-500 mt-1">
                               Ref: {investment.refNo || "N/A"}
                             </p>
                             {investment.lastValuationDate && (
-                              <p className="text-xs text-gray-400 mt-0.5">
+                              <p className="text-xs text-slate-500 mt-1">
                                 Valued: {formatDate(investment.lastValuationDate)}
                               </p>
                             )}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-sm text-gray-700 font-mono">
+                          <span className="text-sm text-slate-900 font-mono font-medium">
                             {investment.totalUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-sm text-gray-900 font-medium">
+                          <span className="text-sm text-slate-900 font-semibold">
                             {formatCurrency(investment.unitPrice)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-sm text-gray-900 font-semibold">
+                          <span className="text-sm text-slate-900 font-bold">
                             {formatCurrency(valuation)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-sm text-gray-700">
+                          <span className="text-sm text-slate-700 font-medium">
                             {formatCurrency(investment.cashBalance || 0)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="text-right">
-                            <span className="text-sm text-gray-700">
+                            <span className="text-sm text-slate-900 font-medium">
                               {formatCurrency(investment.lastTransactionAmount)}
                             </span>
-                            <p className="text-xs text-gray-400 mt-0.5">
+                            <p className="text-xs text-slate-500 mt-1">
                               {formatDate(investment.lastContributionDate)}
                             </p>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="inline-block px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">
+                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
                             {investment.paymentFrequency || "N/A"}
                           </span>
                         </td>
+
                         <td className="px-6 py-4 text-center">
-                          <span className="text-xs text-gray-700">
-                            {formatDate(investment.investmentDate)}
+                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
+                            {investment.cost || "N/A"}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${getStatusBadgeClass(investment.status)}`}>
+                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
+                            {investment.initial_price || "N/A"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
+                            {investment.current_price || "N/A"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
+                            {investment.fees || "N/A"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
+                            {investment.gains_loss || "N/A"}
+                          </span>
+                        </td>
+
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(investment.status)}`}>
                             {investment.status || "N/A"}
                           </span>
                         </td>
@@ -559,8 +621,12 @@ function CollectiveInvestments() {
         )}
 
         {/* Footer */}
-        <div className="mt-6 text-right">
-          <p className="text-xs text-gray-400">
+        <div className="mt-6 flex items-center justify-between text-xs text-slate-500">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+            <span>Real-time data</span>
+          </div>
+          <p>
             Last updated{" "}
             {new Date().toLocaleString("en-US", {
               dateStyle: "medium",
