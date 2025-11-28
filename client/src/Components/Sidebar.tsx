@@ -62,6 +62,13 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
   }, []);
 
   const menuSections: MenuSection[] = [
+    {
+    id: "Consolidated",
+    title: "Consolidated view",
+    items: [
+      { name: "Consolidated View", icon: LayoutDashboard, path: "/u/management/consolidated-view" }
+    ],
+  },
   {
     id: "financial",
     title: "Financial",
@@ -98,7 +105,7 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
     title: "Management",
     items: [
       { name: "Profile", icon: User, path: "/u/profile" },
-      { name: "Consolidated view", icon: LayoutDashboard , path:"/u/management/consolidated-view"},
+      
     ],
   },
 
@@ -106,7 +113,7 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
     id: "tools",
     title: "Tools & Resources",
     items: [
-      { name: "Investment Calculator", icon: Calculator },
+      { name: "Investment Calculator", icon: Calculator ,path:"/u/tools/investment-calculator"},
       { name: "Frequently asked questions", icon: HelpCircle },
     ],
   },
@@ -226,6 +233,7 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
                       to={item?.path || "/"} 
                       state={{ pageName: item.name }}  
                       key={item.name}
+                      
                     >
                       <button
                         onClick={() => handleItemClick(item.name)}

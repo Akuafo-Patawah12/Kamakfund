@@ -1,39 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Eye, EyeOff, ArrowUpRight,ArrowDownLeft, TrendingUp, Clock, ChevronRight } from 'lucide-react';
+import type { Account,Transaction } from '../../types';
 
 
 
 
-interface Account {
-  accountId: number;
-  accountName: string | null;
-  accountNumber: string;
-  accountStatus: string;
-  accountType: string;
-  availableBalance: number;
-  blockedFunds: number;
-  branchCode: string;
-  clearedBalance: number;
-  currencyCode: string;
-  currentBalance: number;
-  dateCreated: string; // or Date if you convert it
-  overdraftLimit: number;
-  productCode: string;
-}
 
 
-interface Transaction {
-  id: number;
-  approver: string;
-  balanceAfter: number;
-  balanceBefore: number;
-  creditAmount: number;
-  debitAmount: number;
-  narration: string;
-  referenceNumber: string;
-  transactionDate: number;  // looks like a timestamp (ms)
-  valueDate: string;        // or Date if you convert it
-}
+
+
 
 
 const Account = () => {
@@ -218,7 +193,8 @@ const url = import.meta.env.VITE_BASE_URL
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+
   
 
           <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:border-gray-300 transition-colors">

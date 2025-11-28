@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, X, ChevronDown } from "lucide-react";
+import { Search, Filter, X, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface NonFixedInvestmentProps {
   purchaseDate: string;
@@ -12,96 +12,110 @@ interface NonFixedInvestmentProps {
   previousValuation: number;
 }
 
+interface PaginationData {
+  currentPage: number;
+  pageSize: number;
+  totalRecords: number;
+  totalPages: number;
+}
+
 interface ApiResponse {
   status: number;
   data: NonFixedInvestmentProps[];
+  pagination: PaginationData;
   message?: string;
 }
 
 function NonFixedInvestments() {
   const [equities, setEquities] = useState<NonFixedInvestmentProps[]>([]);
-  const [filteredEquities, setFilteredEquities] = useState<NonFixedInvestmentProps[]>([]);
+  const [pagination, setPagination] = useState<PaginationData>({
+    currentPage: 1,
+    pageSize: 10,
+    totalRecords: 0,
+    totalPages: 0,
+  });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showFilters, setShowFilters] = useState<boolean>(false);
   
   // Filter states
-  const [filterGainLoss, setFilterGainLoss] = useState<string>("all"); // all, gains, losses
-  const [filterDateRange, setFilterDateRange] = useState<string>("all"); // all, 30days, 90days, 1year
+  const [filterGainLoss, setFilterGainLoss] = useState<string>("all");
+  const [filterDateRange, setFilterDateRange] = useState<string>("all");
   const [filterMinValue, setFilterMinValue] = useState<string>("");
   const [filterMaxValue, setFilterMaxValue] = useState<string>("");
   
   const navigate = useNavigate();
 
   const [userId, setUserId] = useState<string>("");
-  const url = import.meta.env.VITE_BASE_URL
+  const url = import.meta.env.VITE_BASE_URL;
     
-    useEffect(() => {
-      const storedUser = localStorage.getItem("userId");
-    
-      if (storedUser) {
-        try {
-          const parsed = JSON.parse(storedUser);
-          console.log("this is the parsed userId", parsed)
-    
-          if (parsed) {
-            setUserId(parsed);
-          } else if (typeof parsed === "string") {
-            setUserId(parsed);
-          }
-        } catch {
-          setUserId(storedUser);
-        }
-      }
-    }, []);
-
   useEffect(() => {
-    const fetchEquities = async () => {
-        if (!userId) return;
+    const storedUser = localStorage.getItem("userId");
+    
+    if (storedUser) {
       try {
-        const response = await fetch(
-          `${url}/kamakfund/rest/kamak/customer/${userId}/non-fixed-investments`,
-          {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        const parsed = JSON.parse(storedUser);
+        console.log("this is the parsed userId", parsed);
+    
+        if (parsed) {
+          setUserId(parsed);
+        } else if (typeof parsed === "string") {
+          setUserId(parsed);
         }
-
-        const data: ApiResponse = await response.json();
-
-        if (data.status === 1) {
-          setEquities(data.data);
-          setFilteredEquities(data.data);
-          console.log("Fetched equity investments:", data.data);
-        } else {
-          navigate("/session-expired");
-          setError(data.message || "Failed to fetch equity investments");
-        }
-      } catch (err) {
-        navigate("/session-expired");
-        console.error("Error fetching equity investments:", err);
-        setError("Error fetching equity investments");
-      } finally {
-        setLoading(false);
+      } catch {
+        setUserId(storedUser);
       }
-    };
+    }
+  }, []);
 
-    fetchEquities();
-  }, [navigate,userId]);
+  const fetchEquities = async (page: number = 1, pageSize: number = 10) => {
+    if (!userId) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${url}/kamakfund/rest/kamak/customer/${userId}/non-fixed-investments?page=${page}&pageSize=${pageSize}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-  // Apply filters whenever filter criteria change
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: ApiResponse = await response.json();
+
+      if (data.status === 1) {
+        setEquities(data.data);
+        setPagination(data.pagination);
+        console.log("Fetched equity investments:", data.data);
+      } else {
+        navigate("/session-expired");
+        setError(data.message || "Failed to fetch equity investments");
+      }
+    } catch (err) {
+      navigate("/session-expired");
+      console.error("Error fetching equity investments:", err);
+      setError("Error fetching equity investments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
+    fetchEquities(pagination.currentPage, pagination.pageSize);
+  }, [userId]);
+
+  // Client-side filtering (applied to current page data)
+  const getFilteredEquities = () => {
     let filtered = [...equities];
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(
         (eq) =>
@@ -110,7 +124,6 @@ function NonFixedInvestments() {
       );
     }
 
-    // Gain/Loss filter
     if (filterGainLoss !== "all") {
       filtered = filtered.filter((eq) => {
         const gains = eq.currentValue - eq.cost;
@@ -118,7 +131,6 @@ function NonFixedInvestments() {
       });
     }
 
-    // Date range filter
     if (filterDateRange !== "all") {
       const now = new Date();
       const cutoffDate = new Date();
@@ -141,20 +153,20 @@ function NonFixedInvestments() {
       });
     }
 
-    // Min value filter
     if (filterMinValue) {
       const minVal = parseFloat(filterMinValue);
       filtered = filtered.filter((eq) => eq.currentValue >= minVal);
     }
 
-    // Max value filter
     if (filterMaxValue) {
       const maxVal = parseFloat(filterMaxValue);
       filtered = filtered.filter((eq) => eq.currentValue <= maxVal);
     }
 
-    setFilteredEquities(filtered);
-  }, [equities, searchTerm, filterGainLoss, filterDateRange, filterMinValue, filterMaxValue]);
+    return filtered;
+  };
+
+  const filteredEquities = getFilteredEquities();
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -170,6 +182,17 @@ function NonFixedInvestments() {
     filterDateRange !== "all" || 
     filterMinValue !== "" || 
     filterMaxValue !== "";
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchEquities(newPage, pagination.pageSize);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    fetchEquities(1, newPageSize);
+  };
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat("en-US", {
@@ -216,20 +239,35 @@ function NonFixedInvestments() {
   const totalGains = totalCurrentValue - totalCost;
   const totalGainsPercent = totalCost > 0 ? ((totalGains / totalCost) * 100).toFixed(2) : "0.00";
 
+  // Pagination helper
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    let startPage = Math.max(1, pagination.currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(pagination.totalPages, startPage + maxVisible - 1);
+    
+    if (endPage - startPage < maxVisible - 1) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-10">
-          
           <h1 className="text-gray-500 text-lg">Non-fixed income portfolio overview</h1>
         </div>
 
         {/* Search and Filter Bar */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col  md:flex-row gap-4">
-            {/* Search Input */}
-            <div className="flex-1  relative">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
@@ -240,7 +278,6 @@ function NonFixedInvestments() {
               />
             </div>
 
-            {/* Filter Toggle Button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2 border rounded text-sm font-medium transition-colors ${
@@ -259,7 +296,6 @@ function NonFixedInvestments() {
               <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`} />
             </button>
 
-            {/* Reset Filters Button */}
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
@@ -271,11 +307,9 @@ function NonFixedInvestments() {
             )}
           </div>
 
-          {/* Filter Panel */}
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Gain/Loss Filter */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-2">
                     Performance
@@ -291,7 +325,6 @@ function NonFixedInvestments() {
                   </select>
                 </div>
 
-                {/* Date Range Filter */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-2">
                     Purchase Date
@@ -308,7 +341,6 @@ function NonFixedInvestments() {
                   </select>
                 </div>
 
-                {/* Min Value Filter */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-2">
                     Min Value ($)
@@ -322,7 +354,6 @@ function NonFixedInvestments() {
                   />
                 </div>
 
-                {/* Max Value Filter */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-2">
                     Max Value ($)
@@ -340,10 +371,26 @@ function NonFixedInvestments() {
           )}
         </div>
 
-        {/* Results Count */}
-        <div className="mb-4 text-sm text-gray-600">
-          Showing {filteredEquities.length} of {equities.length} positions
-          {hasActiveFilters && " (filtered)"}
+        {/* Results Count and Page Size Selector */}
+        <div className="mb-4 flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            Showing {((pagination.currentPage - 1) * pagination.pageSize) + 1} to {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalRecords)} of {pagination.totalRecords} positions
+            {hasActiveFilters && ` (${filteredEquities.length} filtered on current page)`}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Show:</label>
+            <select
+              value={pagination.pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -537,6 +584,90 @@ function NonFixedInvestments() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="border-t border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Page {pagination.currentPage} of {pagination.totalPages}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => handlePageChange(pagination.currentPage - 1)}
+                      disabled={pagination.currentPage === 1}
+                      className={`p-2 rounded border transition-colors ${
+                        pagination.currentPage === 1
+                          ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {pagination.currentPage > 3 && (
+                        <>
+                          <button
+                            onClick={() => handlePageChange(1)}
+                            className="px-3 py-1 rounded border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            1
+                          </button>
+                          {pagination.currentPage > 4 && (
+                            <span className="px-2 text-gray-400">...</span>
+                          )}
+                        </>
+                      )}
+
+                      {getPageNumbers().map((pageNum) => (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-3 py-1 rounded border text-sm transition-colors ${
+                            pageNum === pagination.currentPage
+                              ? "bg-gray-900 text-white border-gray-900"
+                              : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+
+                      {pagination.currentPage < pagination.totalPages - 2 && (
+                        <>
+                          {pagination.currentPage < pagination.totalPages - 3 && (
+                            <span className="px-2 text-gray-400">...</span>
+                          )}
+                          <button
+                            onClick={() => handlePageChange(pagination.totalPages)}
+                            className="px-3 py-1 rounded border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            {pagination.totalPages}
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => handlePageChange(pagination.currentPage + 1)}
+                      disabled={pagination.currentPage === pagination.totalPages}
+                      className={`p-2 rounded border transition-colors ${
+                        pagination.currentPage === pagination.totalPages
+                          ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

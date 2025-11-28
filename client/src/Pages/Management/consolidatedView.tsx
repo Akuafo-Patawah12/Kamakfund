@@ -176,7 +176,7 @@ function ConsolidatedView() {
         </div>
 
         {/* Main Stats - Hero Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-2 gap-6 mb-8">
           {/* Total Current Value Card */}
           <div className="bg-white border border-gray-200 p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gray-900 rounded-full -mr-16 -mt-16 opacity-5"></div>
@@ -187,7 +187,7 @@ function ConsolidatedView() {
                   Total Current Value
                 </p>
               </div>
-              <p className="text-3xl font-bold text-gray-900 mb-4">
+              <p className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">
                 {formatCurrency(summary.totalCurrentValue)}
               </p>
               
@@ -207,7 +207,7 @@ function ConsolidatedView() {
                   Total Principal Invested
                 </p>
               </div>
-              <p className="text-3xl font-bold text-gray-900 mb-4">
+              <p className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">
                 {formatCurrency(summary.totalPrincipal)}
               </p>
               <p className="text-sm text-gray-600">
@@ -218,7 +218,7 @@ function ConsolidatedView() {
         </div>
 
         {/* Secondary Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-2 gap-6 mb-8">
           {/* Total Face Value Card */}
           <div className="bg-white border border-gray-200 p-6">
             <div className="flex items-start justify-between mb-4">
@@ -235,7 +235,7 @@ function ConsolidatedView() {
                 </div>
               </div>
             </div>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-xl lg:text-2xl font-bold text-gray-900">
               {formatCurrency(summary.totalFaceValue)}
             </p>
             <div className="mt-4 pt-4 border-t border-gray-100">
@@ -262,7 +262,7 @@ function ConsolidatedView() {
                 </div>
               </div>
             </div>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-xl lg:text-2xl font-bold text-gray-900">
               {formatNumber(summary.totalInvestments)}
             </p>
             <div className="mt-4 pt-4 border-t border-gray-100">

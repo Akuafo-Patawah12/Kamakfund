@@ -16,6 +16,7 @@ import PrivateEquityInvestments from '../Pages/Other Investments/privateEquity';
 import CommercialPaperInvestments from '../Pages/Other Investments/commercialPaper';
 import ConsolidatedView from '../Pages/Management/consolidatedView';
 import type { Layout } from 'lucide-react';
+import InvestmentCalculator from '../Pages/Tools/InvestmentCalculator';
 
 const Layout: React.FC = () => {
   const location = useLocation();
@@ -81,6 +82,8 @@ const Layout: React.FC = () => {
 
           {/* Management Route */}
           <Route path="/management/consolidated-view" element={<ConsolidatedView />} />
+
+          <Route path='/tools/investment-calculator' element={<InvestmentCalculator/>} />
 
         </Routes>
       </main>

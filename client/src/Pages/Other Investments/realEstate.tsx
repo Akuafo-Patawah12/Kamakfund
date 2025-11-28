@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Search, Filter, X, ChevronDown, Building2, TrendingUp } from "lucide-react";
+import { Search, Filter, X, ChevronDown, Building2, TrendingUp, ChevronLeft, ChevronRight, Wallet, DollarSign, PieChart, TrendingDown } from "lucide-react";
 
 interface RealEstateInvestment {
   id: number;
@@ -12,19 +12,36 @@ interface RealEstateInvestment {
   realEstateProductId: number;
 }
 
+interface Pagination {
+  currentPage: number;
+  pageSize: number;
+  totalRecords: number;
+  totalPages: number;
+}
+
 interface ApiResponse {
   status: number;
   data: RealEstateInvestment[];
+  pagination: Pagination;
   message?: string;
 }
 
 function RealEstateInvestments() {
   const [investments, setInvestments] = useState<RealEstateInvestment[]>([]);
-  const [filteredInvestments, setFilteredInvestments] = useState<RealEstateInvestment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [pagination, setPagination] = useState<Pagination>({
+    currentPage: 1,
+    pageSize: 10,
+    totalRecords: 0,
+    totalPages: 0
+  });
   
   // Filter states
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -35,6 +52,15 @@ function RealEstateInvestments() {
   const [filterMinReturn, setFilterMinReturn] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
 
+  // Stats states (for overall portfolio, not filtered)
+  const [totalStats, setTotalStats] = useState({
+    totalInvestments: 0,
+    totalInvested: 0,
+    totalCurrentValue: 0,
+    totalGainLoss: 0,
+    overallReturn: 0
+  });
+
   const url = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
@@ -43,8 +69,6 @@ function RealEstateInvestments() {
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        console.log("this is the parsed userId", parsed);
-
         if (parsed) {
           setUserId(parsed);
         } else if (typeof parsed === "string") {
@@ -56,55 +80,15 @@ function RealEstateInvestments() {
     }
   }, []);
 
-  // FETCH INVESTMENTS WHEN userId IS LOADED
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchInvestments = async () => {
-      try {
-        const response = await fetch(
-          `${url}/kamakfund/rest/kamak/customer/${userId}/real-estate-investments`,
-          {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: ApiResponse = await response.json();
-
-        if (data.status === 1) {
-          setInvestments(data.data);
-          setFilteredInvestments(data.data);
-        } else {
-          setError(data.message || "Failed to fetch real estate investments");
-        }
-      } catch (err) {
-        console.error("Error fetching real estate investments:", err);
-        setError("Error fetching real estate investments");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInvestments();
-  }, [userId, url]);
-
   // Calculate return percentage
   const calculateReturn = (investment: RealEstateInvestment): number => {
     if (investment.totalAmountInvested === 0) return 0;
     return ((investment.currentValue - investment.totalAmountInvested) / investment.totalAmountInvested) * 100;
   };
 
-  // Apply filters
-  useEffect(() => {
-    let filtered = [...investments];
+  // Apply client-side filters
+  const applyClientFilters = (data: RealEstateInvestment[]): RealEstateInvestment[] => {
+    let filtered = [...data];
 
     // Search filter
     if (searchTerm) {
@@ -150,8 +134,63 @@ function RealEstateInvestments() {
       filtered = filtered.filter((inv) => calculateReturn(inv) >= minRet);
     }
 
-    setFilteredInvestments(filtered);
-  }, [investments, searchTerm, filterStatus, filterMinValue, filterMaxValue, filterMinInvested, filterMaxInvested, filterMinReturn]);
+    return filtered;
+  };
+
+  // FETCH INVESTMENTS WITH PAGINATION
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchInvestments = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `${url}/kamakfund/rest/kamak/customer/${userId}/real-estate-investments?page=${currentPage}&pageSize=${pageSize}`,
+          {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data: ApiResponse = await response.json();
+
+        if (data.status === 1) {
+          setInvestments(data.data);
+          setPagination(data.pagination);
+          
+          // Calculate total stats for the page
+          const totalInv = data.data.reduce((sum, inv) => sum + inv.totalAmountInvested, 0);
+          const totalCurr = data.data.reduce((sum, inv) => sum + inv.currentValue, 0);
+          const gainLoss = totalCurr - totalInv;
+          const overallRet = totalInv > 0 ? ((totalCurr - totalInv) / totalInv) * 100 : 0;
+
+          setTotalStats({
+            totalInvestments: data.pagination.totalRecords,
+            totalInvested: totalInv,
+            totalCurrentValue: totalCurr,
+            totalGainLoss: gainLoss,
+            overallReturn: overallRet
+          });
+        } else {
+          setError(data.message || "Failed to fetch real estate investments");
+        }
+      } catch (err) {
+        console.error("Error fetching real estate investments:", err);
+        setError("Error fetching real estate investments");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInvestments();
+  }, [userId, url, currentPage, pageSize]);
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -206,6 +245,57 @@ function RealEstateInvestments() {
     return "text-gray-600";
   };
 
+  // Pagination handlers
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setCurrentPage(newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
+  // Get page numbers for pagination
+  const getPageNumbers = (): (number | string)[] => {
+    const pages: (number | string)[] = [];
+    const totalPages = pagination.totalPages;
+    const current = pagination.currentPage;
+
+    if (totalPages <= 7) {
+      // Show all pages if 7 or fewer
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+
+      if (current > 3) {
+        pages.push('...');
+      }
+
+      // Show pages around current page
+      const start = Math.max(2, current - 1);
+      const end = Math.min(totalPages - 1, current + 1);
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (current < totalPages - 2) {
+        pages.push('...');
+      }
+
+      // Always show last page
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -228,18 +318,15 @@ function RealEstateInvestments() {
     );
   }
 
-  const totalCurrentValue = filteredInvestments.reduce((sum, inv) => sum + inv.currentValue, 0);
-  const totalInvested = filteredInvestments.reduce((sum, inv) => sum + inv.totalAmountInvested, 0);
-  const totalGainLoss = totalCurrentValue - totalInvested;
-  const overallReturn = totalInvested > 0 ? ((totalCurrentValue - totalInvested) / totalInvested) * 100 : 0;
-  const activeInvestments = filteredInvestments.filter(inv => inv.status?.toLowerCase() === "active").length;
+  // Apply client-side filters
+  const filteredInvestments = applyClientFilters(investments);
 
   // Get unique values for filter dropdowns
   const uniqueStatuses = Array.from(new Set(investments.map(inv => inv.status).filter(Boolean)));
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-2">
@@ -251,8 +338,82 @@ function RealEstateInvestments() {
           <p className="text-gray-500 text-sm">Property and real estate portfolio overview</p>
         </div>
 
+        
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+                Total Investments
+              </p>
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <PieChart className="w-5 h-5 text-blue-600" />
+              </div>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900">{totalStats.totalInvestments}</p>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+                Page Total Invested
+              </p>
+              <div className="bg-purple-100 p-2 rounded-lg">
+                <Wallet className="w-5 h-5 text-purple-600" />
+              </div>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900">
+              {formatCurrency(totalStats.totalInvested)}
+            </p>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+                Page Current Value
+              </p>
+              <div className="bg-emerald-100 p-2 rounded-lg">
+                <DollarSign className="w-5 h-5 text-emerald-600" />
+              </div>
+            </div>
+            <p className="text-2xl font-semibold text-gray-900">
+              {formatCurrency(totalStats.totalCurrentValue)}
+            </p>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+                Page Gain/Loss
+              </p>
+              <div className={`p-2 rounded-lg ${
+                totalStats.overallReturn > 0 
+                  ? "bg-emerald-100" 
+                  : totalStats.overallReturn < 0 
+                  ? "bg-red-100" 
+                  : "bg-gray-100"
+              }`}>
+                {totalStats.overallReturn > 0 ? (
+                  <TrendingUp className="w-5 h-5 text-emerald-600" />
+                ) : totalStats.overallReturn < 0 ? (
+                  <TrendingDown className="w-5 h-5 text-red-600" />
+                ) : (
+                  <DollarSign className="w-5 h-5 text-gray-600" />
+                )}
+              </div>
+            </div>
+            <p className={`text-2xl font-semibold ${getReturnBadgeClass(totalStats.overallReturn)}`}>
+              {formatCurrency(totalStats.totalGainLoss)}
+            </p>
+            <p className={`text-xs mt-1 font-medium ${getReturnBadgeClass(totalStats.overallReturn)}`}>
+              {totalStats.overallReturn > 0 ? "+" : ""}{totalStats.overallReturn.toFixed(2)}%
+            </p>
+          </div>
+        </div>
+
         {/* Search and Filter Bar */}
-        <div className="bg-white border border-gray-200 p-4 mb-6">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -261,13 +422,13 @@ function RealEstateInvestments() {
                 placeholder="Search by description or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               />
             </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 border rounded text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
                 showFilters || hasActiveFilters
                   ? "bg-gray-900 text-white border-gray-900"
                   : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
@@ -286,7 +447,7 @@ function RealEstateInvestments() {
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <X className="w-4 h-4" />
                 Reset
@@ -305,7 +466,7 @@ function RealEstateInvestments() {
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   >
                     <option value="all">All Statuses</option>
                     {uniqueStatuses.map(status => (
@@ -323,7 +484,7 @@ function RealEstateInvestments() {
                     placeholder="0"
                     value={filterMinValue}
                     onChange={(e) => setFilterMinValue(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
 
@@ -336,7 +497,7 @@ function RealEstateInvestments() {
                     placeholder="No limit"
                     value={filterMaxValue}
                     onChange={(e) => setFilterMaxValue(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
 
@@ -349,7 +510,7 @@ function RealEstateInvestments() {
                     placeholder="0"
                     value={filterMinInvested}
                     onChange={(e) => setFilterMinInvested(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
 
@@ -362,7 +523,7 @@ function RealEstateInvestments() {
                     placeholder="No limit"
                     value={filterMaxInvested}
                     onChange={(e) => setFilterMaxInvested(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
 
@@ -375,7 +536,7 @@ function RealEstateInvestments() {
                     placeholder="-100"
                     value={filterMinReturn}
                     onChange={(e) => setFilterMinReturn(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                   />
                 </div>
               </div>
@@ -383,56 +544,32 @@ function RealEstateInvestments() {
           )}
         </div>
 
-        {/* Results Count */}
-        <div className="mb-4 text-sm text-gray-600">
-          Showing {filteredInvestments.length} of {investments.length} investments
-          {hasActiveFilters && " (filtered)"}
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white border border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Investments
-            </p>
-            <p className="text-2xl font-semibold text-gray-900">{investments.length}</p>
-           
+        {/* Results Count and Page Size Selector */}
+        <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="text-sm text-gray-600">
+            Showing {filteredInvestments.length} of {pagination.totalRecords} investments
+            {hasActiveFilters && " (filtered)"}
           </div>
-
-          <div className="bg-white border border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Invested
-            </p>
-            <p className="text-2xl font-semibold text-gray-900">
-              {formatCurrency(totalInvested)}
-            </p>
-          </div>
-
-          <div className="bg-white border border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Current Value
-            </p>
-            <p className="text-2xl font-semibold text-gray-900">
-              {formatCurrency(totalCurrentValue)}
-            </p>
-          </div>
-
-          <div className="bg-white border border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Gain/Loss
-            </p>
-            <p className={`text-2xl font-semibold ${getReturnBadgeClass(overallReturn)}`}>
-              {formatCurrency(totalGainLoss)}
-            </p>
-            <p className={`text-xs mt-1 font-medium ${getReturnBadgeClass(overallReturn)}`}>
-              {overallReturn > 0 ? "+" : ""}{overallReturn.toFixed(2)}%
-            </p>
+          
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Rows per page:</label>
+            <select
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
           </div>
         </div>
 
         {/* Investments Table */}
         {filteredInvestments.length === 0 ? (
-          <div className="bg-white border border-gray-200 p-12 text-center">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-12 text-center">
             <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No investments found</h3>
             <p className="text-gray-500 text-sm mb-4">
@@ -441,7 +578,7 @@ function RealEstateInvestments() {
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded text-sm font-medium hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
               >
                 <X className="w-4 h-4" />
                 Clear All Filters
@@ -449,7 +586,7 @@ function RealEstateInvestments() {
             )}
           </div>
         ) : (
-          <div className="bg-white border border-gray-200">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -533,7 +670,7 @@ function RealEstateInvestments() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${getStatusBadgeClass(investment.status)}`}>
+                                                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded-md ${getStatusBadgeClass(investment.status)}`}>
                             {investment.status || "N/A"}
                           </span>
                         </td>
@@ -543,6 +680,69 @@ function RealEstateInvestments() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  {/* Pagination Info */}
+                  <div className="text-sm text-gray-600">
+                    Page {pagination.currentPage} of {pagination.totalPages}
+                  </div>
+
+                  {/* Pagination Buttons */}
+                  <div className="flex items-center gap-2">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`p-2 border rounded-lg transition-colors ${
+                        currentPage === 1
+                          ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center gap-1">
+                      {getPageNumbers().map((page, index) => (
+                        <React.Fragment key={index}>
+                          {page === '...' ? (
+                            <span className="px-3 py-2 text-gray-500">...</span>
+                          ) : (
+                            <button
+                              onClick={() => handlePageChange(page as number)}
+                              className={`px-3 py-2 border rounded-lg text-sm font-medium transition-colors ${
+                                currentPage === page
+                                  ? "bg-gray-900 text-white border-gray-900"
+                                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === pagination.totalPages}
+                      className={`p-2 border rounded-lg transition-colors ${
+                        currentPage === pagination.totalPages
+                          ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

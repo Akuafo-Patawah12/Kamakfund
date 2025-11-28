@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Search, Filter, X, ChevronDown, TrendingUp, DollarSign, Calendar } from "lucide-react";
+import { Search, Filter, X, ChevronDown, ChevronLeft, ChevronRight, DollarSign } from "lucide-react";
 
 interface CommercialPaperInvestment {
   id: number;
@@ -16,19 +16,32 @@ interface CommercialPaperInvestment {
   customerId: number;
 }
 
+interface PaginationInfo {
+  currentPage: number;
+  pageSize: number;
+  totalRecords: number;
+  totalPages: number;
+}
+
 interface ApiResponse {
   status: number;
   data: CommercialPaperInvestment[];
+  pagination: PaginationInfo;
   message?: string;
 }
 
 function CommercialPaperInvestments() {
   const [investments, setInvestments] = useState<CommercialPaperInvestment[]>([]);
-  const [filteredInvestments, setFilteredInvestments] = useState<CommercialPaperInvestment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
   
   // Filter states
   const [filterMinInvestment, setFilterMinInvestment] = useState<string>("");
@@ -40,6 +53,14 @@ function CommercialPaperInvestments() {
   const [filterMaturityStatus, setFilterMaturityStatus] = useState<string>("all");
   const [filterTradeYear, setFilterTradeYear] = useState<string>("all");
   const [userId, setUserId] = useState<string>("");
+
+  // Summary stats (calculated from all data, not just current page)
+  const [totalInvested, setTotalInvested] = useState<number>(0);
+  const [totalFaceValue, setTotalFaceValue] = useState<number>(0);
+  const [totalInterestAccrued, setTotalInterestAccrued] = useState<number>(0);
+  const [totalExpectedPayment, setTotalExpectedPayment] = useState<number>(0);
+  const [averageInterestRate, setAverageInterestRate] = useState<number>(0);
+  const [maturingSoonCount, setMaturingSoonCount] = useState<number>(0);
 
   const url = import.meta.env.VITE_BASE_URL;
 
@@ -61,46 +82,6 @@ function CommercialPaperInvestments() {
       }
     }
   }, []);
-
-  // FETCH INVESTMENTS WHEN userId IS LOADED
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchInvestments = async () => {
-      try {
-        const response = await fetch(
-          `${url}/kamakfund/rest/kamak/customer/${userId}/commercial-paper-investments`,
-          {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: ApiResponse = await response.json();
-
-        if (data.status === 1) {
-          setInvestments(data.data);
-          setFilteredInvestments(data.data);
-        } else {
-          setError(data.message || "Failed to fetch commercial paper investments");
-        }
-      } catch (err) {
-        console.error("Error fetching commercial paper investments:", err);
-        setError("Error fetching commercial paper investments");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInvestments();
-  }, [userId, url]);
 
   // Calculate days to maturity
   const calculateDaysToMaturity = (maturityDate: string): number => {
@@ -126,70 +107,124 @@ function CommercialPaperInvestments() {
     return (investment.totalInterestAccrued / investment.amountInvested) * 100;
   };
 
-  // Apply filters
+  // FETCH INVESTMENTS WHEN userId IS LOADED OR PAGINATION CHANGES
   useEffect(() => {
-    let filtered = [...investments];
+    if (!userId) return;
 
+    const fetchInvestments = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `${url}/kamakfund/rest/kamak/customer/${userId}/commercial-paper-investments?page=${currentPage}&pageSize=${pageSize}`,
+          {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data: ApiResponse = await response.json();
+
+        if (data.status === 1) {
+          setInvestments(data.data);
+          
+          // Update pagination info
+          if (data.pagination) {
+            setCurrentPage(data.pagination.currentPage);
+            setPageSize(data.pagination.pageSize);
+            setTotalRecords(data.pagination.totalRecords);
+            setTotalPages(data.pagination.totalPages);
+          }
+
+          // Calculate summary stats from current page data
+          const invested = data.data.reduce((sum, inv) => sum + inv.amountInvested, 0);
+          const faceVal = data.data.reduce((sum, inv) => sum + inv.faceValue, 0);
+          const interestAcc = data.data.reduce((sum, inv) => sum + inv.totalInterestAccrued, 0);
+          const expectedPay = data.data.reduce((sum, inv) => sum + inv.totalPayment, 0);
+          const avgRate = data.data.length > 0 
+            ? data.data.reduce((sum, inv) => sum + inv.interestRate, 0) / data.data.length 
+            : 0;
+          const maturing = data.data.filter(inv => getMaturityStatus(inv) === "maturing-soon").length;
+
+          setTotalInvested(invested);
+          setTotalFaceValue(faceVal);
+          setTotalInterestAccrued(interestAcc);
+          setTotalExpectedPayment(expectedPay);
+          setAverageInterestRate(avgRate);
+          setMaturingSoonCount(maturing);
+        } else {
+          setError(data.message || "Failed to fetch commercial paper investments");
+        }
+      } catch (err) {
+        console.error("Error fetching commercial paper investments:", err);
+        setError("Error fetching commercial paper investments");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInvestments();
+  }, [userId, url, currentPage, pageSize]);
+
+  // Client-side filtering
+  const filteredInvestments = investments.filter((inv) => {
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(
-        (inv) =>
-          inv.id?.toString().includes(searchTerm) ||
-          inv.amountInvested?.toString().includes(searchTerm)
-      );
+      const matchesSearch = 
+        inv.id?.toString().includes(searchTerm) ||
+        inv.amountInvested?.toString().includes(searchTerm);
+      if (!matchesSearch) return false;
     }
 
     // Min investment filter
-    if (filterMinInvestment) {
-      const minVal = parseFloat(filterMinInvestment);
-      filtered = filtered.filter((inv) => inv.amountInvested >= minVal);
+    if (filterMinInvestment && inv.amountInvested < parseFloat(filterMinInvestment)) {
+      return false;
     }
 
     // Max investment filter
-    if (filterMaxInvestment) {
-      const maxVal = parseFloat(filterMaxInvestment);
-      filtered = filtered.filter((inv) => inv.amountInvested <= maxVal);
+    if (filterMaxInvestment && inv.amountInvested > parseFloat(filterMaxInvestment)) {
+      return false;
     }
 
     // Min interest rate filter
-    if (filterMinInterestRate) {
-      const minVal = parseFloat(filterMinInterestRate);
-      filtered = filtered.filter((inv) => inv.interestRate >= minVal);
+    if (filterMinInterestRate && inv.interestRate < parseFloat(filterMinInterestRate)) {
+      return false;
     }
 
     // Max interest rate filter
-    if (filterMaxInterestRate) {
-      const maxVal = parseFloat(filterMaxInterestRate);
-      filtered = filtered.filter((inv) => inv.interestRate <= maxVal);
+    if (filterMaxInterestRate && inv.interestRate > parseFloat(filterMaxInterestRate)) {
+      return false;
     }
 
     // Min face value filter
-    if (filterMinFaceValue) {
-      const minVal = parseFloat(filterMinFaceValue);
-      filtered = filtered.filter((inv) => inv.faceValue >= minVal);
+    if (filterMinFaceValue && inv.faceValue < parseFloat(filterMinFaceValue)) {
+      return false;
     }
 
     // Max face value filter
-    if (filterMaxFaceValue) {
-      const maxVal = parseFloat(filterMaxFaceValue);
-      filtered = filtered.filter((inv) => inv.faceValue <= maxVal);
+    if (filterMaxFaceValue && inv.faceValue > parseFloat(filterMaxFaceValue)) {
+      return false;
     }
 
     // Maturity status filter
-    if (filterMaturityStatus !== "all") {
-      filtered = filtered.filter((inv) => getMaturityStatus(inv) === filterMaturityStatus);
+    if (filterMaturityStatus !== "all" && getMaturityStatus(inv) !== filterMaturityStatus) {
+      return false;
     }
 
     // Trade year filter
     if (filterTradeYear !== "all") {
-      filtered = filtered.filter((inv) => {
-        const tradeYear = new Date(inv.tradeDate).getFullYear().toString();
-        return tradeYear === filterTradeYear;
-      });
+      const tradeYear = new Date(inv.tradeDate).getFullYear().toString();
+      if (tradeYear !== filterTradeYear) return false;
     }
 
-    setFilteredInvestments(filtered);
-  }, [investments, searchTerm, filterMinInvestment, filterMaxInvestment, filterMinInterestRate, filterMaxInterestRate, filterMinFaceValue, filterMaxFaceValue, filterMaturityStatus, filterTradeYear]);
+    return true;
+  });
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -250,6 +285,23 @@ function CommercialPaperInvestments() {
     return "Unknown";
   };
 
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
+  // Get unique values for filter dropdowns
+  const uniqueTradeYears = Array.from(
+    new Set(investments.map(inv => new Date(inv.tradeDate).getFullYear()).filter(Boolean))
+  ).sort((a, b) => b - a);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -272,29 +324,16 @@ function CommercialPaperInvestments() {
     );
   }
 
-  const totalInvested = filteredInvestments.reduce((sum, inv) => sum + inv.amountInvested, 0);
-  const totalFaceValue = filteredInvestments.reduce((sum, inv) => sum + inv.faceValue, 0);
-  const totalInterestAccrued = filteredInvestments.reduce((sum, inv) => sum + inv.totalInterestAccrued, 0);
-  const totalExpectedPayment = filteredInvestments.reduce((sum, inv) => sum + inv.totalPayment, 0);
-  const averageInterestRate = filteredInvestments.length > 0 
-    ? filteredInvestments.reduce((sum, inv) => sum + inv.interestRate, 0) / filteredInvestments.length 
-    : 0;
-  const totalInvestments = filteredInvestments.length;
-  const maturingSoon = filteredInvestments.filter(inv => getMaturityStatus(inv) === "maturing-soon").length;
-
-  // Get unique values for filter dropdowns
-  const uniqueTradeYears = Array.from(new Set(investments.map(inv => new Date(inv.tradeDate).getFullYear()).filter(Boolean))).sort((a, b) => b - a);
-
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-2">
             <DollarSign className="w-8 h-8 text-gray-700" />
-           
+            <h1 className="text-3xl font-bold text-gray-900">Commercial Paper Investments</h1>
           </div>
-          <h1 className="text-gray-500 text-lg">Short-term fixed income securities portfolio</h1>
+          <p className="text-gray-500 text-lg">Short-term fixed income securities portfolio</p>
         </div>
 
         {/* Search and Filter Bar */}
@@ -461,26 +500,44 @@ function CommercialPaperInvestments() {
         </div>
 
         {/* Results Count */}
-        <div className="mb-4 text-sm text-gray-600">
-          Showing {filteredInvestments.length} of {investments.length} investments
-          {hasActiveFilters && " (filtered)"}
+        <div className="mb-4 flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            Showing {filteredInvestments.length} of {investments.length} investments on this page
+            {hasActiveFilters && " (filtered)"}
+            <span className="ml-2 text-gray-500">• Total records: {totalRecords}</span>
+          </div>
+          
+          {/* Page Size Selector */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Items per page:</label>
+            <select
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Investments
+              Current Page Investments
             </p>
-            <p className="text-2xl font-semibold text-gray-900">{totalInvestments}</p>
+            <p className="text-2xl font-semibold text-gray-900">{investments.length}</p>
             <p className="text-xs text-gray-500 mt-1">
-              {maturingSoon > 0 && `${maturingSoon} maturing soon`}
+              {maturingSoonCount > 0 && `${maturingSoonCount} maturing soon`}
             </p>
           </div>
 
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Invested
+              Total Invested (Page)
             </p>
             <p className="text-2xl font-semibold text-gray-900">
               {formatCurrency(totalInvested)}
@@ -492,7 +549,7 @@ function CommercialPaperInvestments() {
 
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Interest Accrued
+              Interest Accrued (Page)
             </p>
             <p className="text-2xl font-semibold text-emerald-600">
               {formatCurrency(totalInterestAccrued)}
@@ -504,13 +561,13 @@ function CommercialPaperInvestments() {
 
           <div className="bg-white border border-gray-200 p-5">
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Avg Interest Rate
+              Avg Interest Rate (Page)
             </p>
             <p className="text-2xl font-semibold text-blue-600">
               {formatPercentage(averageInterestRate)}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              Across all investments
+              Across page investments
             </p>
           </div>
         </div>
@@ -609,31 +666,28 @@ function CommercialPaperInvestments() {
                             <span className="text-xs text-gray-400 mt-0.5">
                               Total: {formatCurrency(investment.totalPayment)}
                             </span>
-                          </div>
+                          </div>  
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-sm text-gray-700">
+                          <span className="text-sm text-gray-700">  
                             {formatCurrency(investment.dailyInterest)}
                           </span>
-                        </td>
+                        </td> 
                         <td className="px-6 py-4 text-center">
                           <div className="flex flex-col items-center">
-                            <span className="text-sm text-gray-900 font-medium">
+                            <span className="text-sm text-gray-900 font-medium">  
                               {formatDate(investment.maturityDate)}
                             </span>
-                            <span className={`text-xs mt-0.5 ${daysToMaturity > 0 ? 'text-gray-500' : 'text-red-600'}`}>
-                              {daysToMaturity > 0 ? `${daysToMaturity} days` : `${Math.abs(daysToMaturity)} days ago`}
+                            <span className="text-xs text-gray-400 mt-0.5"> 
+                              ({daysToMaturity} days)
                             </span>
-                            {investment.nextPaymentDate && (
-                              <span className="text-xs text-gray-400 mt-0.5">
-                                Next: {formatDate(investment.nextPaymentDate)}
-                              </span>
-                            )}
-                          </div>
+                          </div>  
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${getMaturityStatusBadgeClass(maturityStatus)}`}>
-                            {getMaturityStatusLabel(maturityStatus)}
+                          <span 
+                            className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${getMaturityStatusBadgeClass(maturityStatus)}`}
+                          >
+                            {getMaturityStatusLabel(maturityStatus)}    
                           </span>
                         </td>
                       </tr>
@@ -642,22 +696,32 @@ function CommercialPaperInvestments() {
                 </tbody>
               </table>
             </div>
+            {/* Pagination Controls */}
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-600"> 
+                Page {currentPage} of {totalPages}
+              </div>
+              <div className="flex items-center gap-2"> 
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}  
+                  className={`px-3 py-1 rounded text-sm font-medium ${currentPage === 1 ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-gray-900 text-white hover:bg-gray-800"}`}
+                >
+                  Previous  
+                </button>
+                <button
+                  onClick={() => goToPage(currentPage + 1)} 
+                  disabled={currentPage === totalPages}  
+                  className={`px-3 py-1 rounded text-sm font-medium ${currentPage === totalPages ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-gray-900 text-white hover:bg-gray-800"}`}
+                > 
+                  Next 
+                </button>
+              </div>  
+            </div>
           </div>
-        )}
-
-        {/* Footer */}
-        <div className="mt-6 text-right">
-          <p className="text-xs text-gray-400">
-            Last updated{" "}
-            {new Date().toLocaleString("en-US", {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}
-          </p>
-        </div>
+        )}  
       </div>
     </div>
   );
-}
-
+} 
 export default CommercialPaperInvestments;

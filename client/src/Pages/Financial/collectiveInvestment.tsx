@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Search, Filter, X, ChevronDown, TrendingUp, Wallet, PieChart,  DollarSign, Activity, RefreshCw, FileText } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, Filter, X, ChevronDown, TrendingUp, Wallet, PieChart, DollarSign, Activity, RefreshCw, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CollectiveInvestment {
   accountNumber: string;
@@ -19,21 +19,29 @@ interface CollectiveInvestment {
   lastValuationDate: string;
   cashBalance?: number;
   paymentStatus?: string;
+  valuation: number;
 }
 
 interface ApiResponse {
   status: number;
   data: CollectiveInvestment[];
   message?: string;
+  offset: number;
+  limit: number;
+  count: number;
 }
 
 function CollectiveInvestments() {
   const [investments, setInvestments] = useState<CollectiveInvestment[]>([]);
-  const [filteredInvestments, setFilteredInvestments] = useState<CollectiveInvestment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const [totalItems, setTotalItems] = useState<number>(0);
   
   // Filter states
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -44,6 +52,14 @@ function CollectiveInvestments() {
   const [filterMinUnits, setFilterMinUnits] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
 
+  // Stats states (for total calculations)
+  const [totalStats, setTotalStats] = useState({
+    totalValuation: 0,
+    totalCashBalance: 0,
+    totalUnits: 0,
+    totalAccounts: 0
+  });
+
   const url = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
@@ -52,8 +68,6 @@ function CollectiveInvestments() {
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        console.log("this is the parsed userId", parsed);
-
         if (parsed) {
           setUserId(parsed);
         } else if (typeof parsed === "string") {
@@ -65,93 +79,132 @@ function CollectiveInvestments() {
     }
   }, []);
 
-  // FETCH INVESTMENTS WHEN userId IS LOADED
-  useEffect(() => {
+  // Fetch all investments for stats calculation (without pagination)
+  const fetchAllStats = async () => {
     if (!userId) return;
 
-    const fetchInvestments = async () => {
-      try {
-        const response = await fetch(
-          `${url}/kamakfund/rest/kamak/customer/${userId}/collective-investments`,
-          {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+    try {
+      const response = await fetch(
+        `${url}/kamakfund/rest/kamak/customer/${userId}/collective-investments?offset=0&limit=10000`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
+      );
 
+      if (response.ok) {
         const data: ApiResponse = await response.json();
-
         if (data.status === 1) {
-          console.log(data.data)
-          setInvestments(data.data);
-          setFilteredInvestments(data.data);
-        } else {
-          setError(data.message || "Failed to fetch collective investments");
+          const stats = data.data.reduce((acc, inv) => ({
+            totalValuation: acc.totalValuation + (inv.valuation || 0),
+            totalCashBalance: acc.totalCashBalance + (inv.cashBalance || 0),
+            totalUnits: acc.totalUnits + (inv.totalUnits || 0),
+            totalAccounts: acc.totalAccounts + 1
+          }), { totalValuation: 0, totalCashBalance: 0, totalUnits: 0, totalAccounts: 0 });
+          
+          setTotalStats(stats);
+          setTotalItems(data.data.length);
         }
-      } catch (err) {
-        console.error("Error fetching collective investments:", err);
-        setError("Error fetching collective investments");
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchInvestments();
-  }, [userId, url]);
-
-  // Calculate valuation helper function
-  const calculateValuation = (investment: CollectiveInvestment): number => {
-    return investment.unitPrice * investment.totalUnits;
+    } catch (err) {
+      console.error("Error fetching stats:", err);
+    }
   };
 
-  // Apply filters
-  useEffect(() => {
-    let filtered = [...investments];
+  // Fetch paginated investments
+  const fetchInvestments = async () => {
+    if (!userId) return;
 
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (inv) =>
-          inv.accountNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          inv.refNo?.toLowerCase().includes(searchTerm.toLowerCase())
+    setLoading(true);
+    try {
+      const offset = (currentPage - 1) * itemsPerPage;
+      const response = await fetch(
+        `${url}/kamakfund/rest/kamak/customer/${userId}/collective-investments?offset=${offset}&limit=${itemsPerPage}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: ApiResponse = await response.json();
+
+      if (data.status === 1) {
+        setInvestments(data.data);
+      } else {
+        setError(data.message || "Failed to fetch collective investments");
+      }
+    } catch (err) {
+      console.error("Error fetching collective investments:", err);
+      setError("Error fetching collective investments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load - fetch stats
+  useEffect(() => {
+    fetchAllStats();
+  }, [userId, url]);
+
+  // Fetch investments when pagination changes
+  useEffect(() => {
+    fetchInvestments();
+  }, [userId, url, currentPage, itemsPerPage]);
+
+  // Client-side filtering
+  const filteredInvestments = investments.filter((inv) => {
+    // Search filter
+    if (searchTerm) {
+      const matchesSearch = 
+        inv.accountNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inv.refNo?.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!matchesSearch) return false;
     }
 
-    if (filterStatus !== "all") {
-      filtered = filtered.filter((inv) => inv.status?.toLowerCase() === filterStatus.toLowerCase());
+    // Status filter
+    if (filterStatus !== "all" && inv.status?.toLowerCase() !== filterStatus.toLowerCase()) {
+      return false;
     }
 
-    if (filterPaymentStatus !== "all") {
-      filtered = filtered.filter((inv) => inv.paymentStatus?.toLowerCase() === filterPaymentStatus.toLowerCase());
+    // Payment status filter
+    if (filterPaymentStatus !== "all" && inv.paymentStatus?.toLowerCase() !== filterPaymentStatus.toLowerCase()) {
+      return false;
     }
 
-    if (filterPaymentFrequency !== "all") {
-      filtered = filtered.filter((inv) => inv.paymentFrequency?.toLowerCase() === filterPaymentFrequency.toLowerCase());
+    // Payment frequency filter
+    if (filterPaymentFrequency !== "all" && inv.paymentFrequency?.toLowerCase() !== filterPaymentFrequency.toLowerCase()) {
+      return false;
     }
 
+    // Valuation filters
     if (filterMinValuation) {
       const minVal = parseFloat(filterMinValuation);
-      filtered = filtered.filter((inv) => calculateValuation(inv) >= minVal);
+      if (inv.valuation < minVal) return false;
     }
 
     if (filterMaxValuation) {
       const maxVal = parseFloat(filterMaxValuation);
-      filtered = filtered.filter((inv) => calculateValuation(inv) <= maxVal);
+      if (inv.valuation > maxVal) return false;
     }
 
+    // Units filter
     if (filterMinUnits) {
       const minUnits = parseFloat(filterMinUnits);
-      filtered = filtered.filter((inv) => inv.totalUnits >= minUnits);
+      if (inv.totalUnits < minUnits) return false;
     }
 
-    setFilteredInvestments(filtered);
-  }, [investments, searchTerm, filterStatus, filterPaymentStatus, filterPaymentFrequency, filterMinValuation, filterMaxValuation, filterMinUnits]);
+    return true;
+  });
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -161,6 +214,7 @@ function CollectiveInvestments() {
     setFilterMinValuation("");
     setFilterMaxValuation("");
     setFilterMinUnits("");
+    setCurrentPage(1);
   };
 
   const hasActiveFilters = 
@@ -199,7 +253,52 @@ function CollectiveInvestments() {
     return "bg-blue-50 text-blue-700 border border-blue-200";
   };
 
-  if (loading) {
+  // Pagination calculations
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const getPaginationRange = () => {
+    const range: (number | string)[] = [];
+    const showPages = 5;
+    
+    if (totalPages <= showPages + 2) {
+      for (let i = 1; i <= totalPages; i++) {
+        range.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= showPages; i++) range.push(i);
+        range.push("...");
+        range.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        range.push(1);
+        range.push("...");
+        for (let i = totalPages - showPages + 1; i <= totalPages; i++) range.push(i);
+      } else {
+        range.push(1);
+        range.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) range.push(i);
+        range.push("...");
+        range.push(totalPages);
+      }
+    }
+    
+    return range;
+  };
+
+  const uniqueStatuses = Array.from(new Set(investments.map(inv => inv.status).filter(Boolean)));
+  const uniquePaymentStatuses = Array.from(new Set(investments.map(inv => inv.paymentStatus).filter(Boolean)));
+  const uniqueFrequencies = Array.from(new Set(investments.map(inv => inv.paymentFrequency).filter(Boolean)));
+
+  if (loading && investments.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="text-center">
@@ -223,15 +322,6 @@ function CollectiveInvestments() {
       </div>
     );
   }
-
-  const totalValuation = filteredInvestments.reduce((sum, inv) => sum + calculateValuation(inv), 0);
-  const totalCashBalance = filteredInvestments.reduce((sum, inv) => sum + (inv.cashBalance || 0), 0);
-  const totalUnits = filteredInvestments.reduce((sum, inv) => sum + (inv.totalUnits || 0), 0);
-  const totalAccounts = filteredInvestments.length;
-
-  const uniqueStatuses = Array.from(new Set(investments.map(inv => inv.status).filter(Boolean)));
-  const uniquePaymentStatuses = Array.from(new Set(investments.map(inv => inv.paymentStatus).filter(Boolean)));
-  const uniqueFrequencies = Array.from(new Set(investments.map(inv => inv.paymentFrequency).filter(Boolean)));
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -257,9 +347,8 @@ function CollectiveInvestments() {
                 <Activity className="w-5 h-5 text-slate-700" />
               </div>
             </div>
-            <p className="text-sm text-slate-600 mb-1">Total Investment</p>
-            <p className="text-2xl font-bold text-slate-900">{totalAccounts}</p>
-            <p className="text-xs text-slate-500 mt-2">of {filteredInvestments.length} total accounts</p>
+            <p className="text-sm text-slate-600 mb-1">Total Accounts</p>
+            <p className="text-2xl font-bold text-slate-900">{totalStats.totalAccounts}</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -270,7 +359,7 @@ function CollectiveInvestments() {
             </div>
             <p className="text-sm text-slate-600 mb-1">Total Units</p>
             <p className="text-2xl font-bold text-slate-900">
-              {totalUnits.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              {totalStats.totalUnits.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </p>
           </div>
 
@@ -281,7 +370,7 @@ function CollectiveInvestments() {
               </div>
             </div>
             <p className="text-sm text-slate-600 mb-1">Total Valuation</p>
-            <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalValuation)}</p>
+            <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalStats.totalValuation)}</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -291,7 +380,7 @@ function CollectiveInvestments() {
               </div>
             </div>
             <p className="text-sm text-slate-600 mb-1">Cash Balance</p>
-            <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalCashBalance)}</p>
+            <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalStats.totalCashBalance)}</p>
           </div>
         </div>
 
@@ -305,7 +394,7 @@ function CollectiveInvestments() {
                 placeholder="Search by account number or reference..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 text-stone-600 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-slate-50"
+                className="w-full pl-11 pr-4 py-2.5 text-slate-600 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent bg-slate-50"
               />
             </div>
 
@@ -343,13 +432,11 @@ function CollectiveInvestments() {
             <div className="mt-5 pt-5 border-t border-slate-200">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">
-                    Account Status
-                  </label>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">Account Status</label>
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-2.5 text-stone-500 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
+                    className="w-full px-3 py-2.5 text-slate-600 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   >
                     <option value="all">All Statuses</option>
                     {uniqueStatuses.map(status => (
@@ -359,13 +446,11 @@ function CollectiveInvestments() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">
-                    Payment Status
-                  </label>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">Payment Status</label>
                   <select
                     value={filterPaymentStatus}
                     onChange={(e) => setFilterPaymentStatus(e.target.value)}
-                    className="w-full px-3 py-2.5 text-stone-500 border  border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
+                    className="w-full px-3 py-2.5 text-slate-600 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   >
                     <option value="all">All Payment Statuses</option>
                     {uniquePaymentStatuses.map(status => (
@@ -375,13 +460,11 @@ function CollectiveInvestments() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">
-                    Payment Frequency
-                  </label>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">Payment Frequency</label>
                   <select
                     value={filterPaymentFrequency}
                     onChange={(e) => setFilterPaymentFrequency(e.target.value)}
-                    className="w-full px-3 py-2.5 text-stone-500 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
+                    className="w-full px-3 py-2.5 text-slate-600 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   >
                     <option value="all">All Frequencies</option>
                     {uniqueFrequencies.map(freq => (
@@ -391,41 +474,35 @@ function CollectiveInvestments() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">
-                    Min Valuation (GHS)
-                  </label>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">Min Valuation (GHS)</label>
                   <input
                     type="number"
                     placeholder="0"
                     value={filterMinValuation}
                     onChange={(e) => setFilterMinValuation(e.target.value)}
-                    className="w-full px-3 py-2.5 text-stone-500 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
+                    className="w-full px-3 py-2.5 text-slate-600 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">
-                    Max Valuation (GHS)
-                  </label>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">Max Valuation (GHS)</label>
                   <input
                     type="number"
                     placeholder="No limit"
                     value={filterMaxValuation}
                     onChange={(e) => setFilterMaxValuation(e.target.value)}
-                    className="w-full px-3 py-2.5 text-stone-500 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
+                    className="w-full px-3 py-2.5 text-slate-600 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-2">
-                    Min Units
-                  </label>
+                  <label className="block text-xs font-medium text-slate-700 mb-2">Min Units</label>
                   <input
                     type="number"
                     placeholder="0"
                     value={filterMinUnits}
                     onChange={(e) => setFilterMinUnits(e.target.value)}
-                    className="w-full px-3 py-2.5 text-stone-500 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
+                    className="w-full px-3 py-2.5 text-slate-600 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50"
                   />
                 </div>
               </div>
@@ -433,13 +510,33 @@ function CollectiveInvestments() {
           )}
         </div>
 
-        {/* Results Count */}
-        <div className="mb-4 flex items-center gap-2 text-sm text-slate-600">
-          <FileText className="w-4 h-4" />
-          <span>
-            Showing <span className="font-semibold text-slate-900">{filteredInvestments.length}</span> of <span className="font-semibold text-slate-900">{investments.length}</span> accounts
-            {hasActiveFilters && " (filtered)"}
-          </span>
+        {/* Results Count and Items Per Page */}
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <FileText className="w-4 h-4" />
+            <span>
+              Showing <span className="font-semibold text-slate-900">{startItem}</span> to <span className="font-semibold text-slate-900">{endItem}</span> of <span className="font-semibold text-slate-900">{totalItems}</span> accounts
+              {hasActiveFilters && " (filtered)"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-600">Items per page:</label>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-3 py-1.5 text-sm text-stone-700  border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
+            >
+              <option value={5} className="text-stone-700">5</option>
+              <option value={10} className="text-stone-700">10</option>
+              <option value={20} className="text-stone-700">20</option>
+              <option value={50} className="text-stone-700">50</option>
+              <option value={100} className="text-stone-700">100</option>
+            </select>
+          </div>
         </div>
 
         {/* Investments Table */}
@@ -463,66 +560,30 @@ function CollectiveInvestments() {
             )}
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      <div className="flex items-center gap-2">
-                        
-                        Investment Date
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      <div className="flex items-center gap-2">
-                        
-                        Account Details
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      <div className="flex items-center justify-end gap-2">
-                        
-                        Units
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      Unit Price
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      <div className="flex items-center justify-end gap-2">
-                        
-                        Valuation
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      <div className="flex items-center justify-end gap-2">
-                       
-                        Cash Balance
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      Last Contribution
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      Frequency
-                    </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Cost</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Initial Price</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Current Price</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Fees</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Gains/Loss</th>
-                    
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {filteredInvestments.map((investment, index) => {
-                    const valuation = calculateValuation(investment);
-
-                    return (
+          <>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Investment Date</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Account Details</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Units</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Unit Price</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Valuation</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Cash Balance</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Last Contribution</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Frequency</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Cost</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Initial Price</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Current Price</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Fees</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Gains/Loss</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {filteredInvestments.map((investment, index) => (
                       <tr key={index} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4">
                           <span className="text-sm text-slate-700 font-medium">
@@ -531,7 +592,7 @@ function CollectiveInvestments() {
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                            <p className="text-sm font-semibold text-slate-900">
                               {investment.accountNumber || "N/A"}
                             </p>
                             <p className="text-xs text-slate-500 mt-1">
@@ -556,87 +617,110 @@ function CollectiveInvestments() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="text-sm text-slate-900 font-bold">
-                            {formatCurrency(valuation)}
+                            {formatCurrency(investment.valuation)}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className="text-sm text-slate-700 font-medium">
+                          <span className="text-sm text-slate-900 font-bold"> 
                             {formatCurrency(investment.cashBalance || 0)}
                           </span>
-                        </td>
+                        </td> 
                         <td className="px-6 py-4 text-right">
-                          <div className="text-right">
-                            <span className="text-sm text-slate-900 font-medium">
-                              {formatCurrency(investment.lastTransactionAmount)}
-                            </span>
-                            <p className="text-xs text-slate-500 mt-1">
-                              {formatDate(investment.lastContributionDate)}
-                            </p>
-                          </div>
+                          <span className="text-sm text-slate-700 font-medium">
+                            {formatCurrency(investment.lastTransactionAmount)}  
+                          </span>
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
+                        <td className="px-6 py-4 text-center">  
+                          <span className="text-sm text-slate-700 font-medium">
                             {investment.paymentFrequency || "N/A"}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
-                            {investment.cost || "N/A"}
-                          </span>
+                          </span> 
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
-                            {investment.initial_price || "N/A"}
+                          <span className="text-sm text-slate-700 font-medium"> 
+                            {formatCurrency(investment.cost)}
                           </span>
+                        </td> 
+                        <td className="px-6 py-4 text-center">
+                          <span className="text-sm text-slate-700 font-medium">
+                            {formatCurrency(investment.initial_price)}  
+                          </span>
+                        </td> 
+                        <td className="px-6 py-4 text-center">  
+                          <span className="text-sm text-slate-700 font-medium">
+                            {formatCurrency(investment.current_price)}  
+                          </span> 
+                        </td>   
+                        <td className="px-6 py-4 text-center">  
+                          <span className="text-sm text-slate-700 font-medium">
+                            {formatCurrency(investment.fees)}
+                          </span> 
+                        </td> 
+                        <td className="px-6 py-4 text-center">  
+                          <span className="text-sm text-slate-700 font-medium">
+                            {formatCurrency(investment.gains_loss)}  
+                          </span> 
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
-                            {investment.current_price || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
-                            {investment.fees || "N/A"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center px-3 py-1 text-xs font-medium bg-slate-50 text-slate-700 rounded-full border border-slate-200">
-                            {investment.gains_loss || "N/A"}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(investment.status)}`}>
-                            {investment.status || "N/A"}
-                          </span>
-                        </td>
+                          <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(investment.status)}`}>    
+                            {investment.status || "N/A"}  
+                          </span> 
+                        </td> 
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>  
+            {/* Pagination Controls */}
+            <div className="mt-6 flex items-center justify-between">
+              <button 
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${ 
+                  currentPage === 1 
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                    : "bg-slate-900 text-white hover:bg-slate-800 shadow-sm"  
+                }`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </button> 
+              <div className="flex items-center gap-2">
+                {getPaginationRange().map((page, index) => 
+                  page === "..." ? (    
+                    <span key={index} className="px-2 text-sm text-slate-500">...</span>
+                  ) : (    
+                    <button   
+                      key={index}
+                      onClick={() => goToPage(Number(page))}   
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${   
+                        page === currentPage   
+                          ? "bg-slate-900 text-white shadow-sm"   
+                          : "bg-slate-50 text-slate-700 hover:bg-slate-100"   
+                      }`}  
+                    >   
+                      {page}  
+                    </button>  
+                  )  
+                )}  
+              </div>
+              <button 
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${ 
+                  currentPage === totalPages  
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                    : "bg-slate-900 text-white hover:bg-slate-800 shadow-sm"  
+                }`}   
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />  
+              </button>
             </div>
-          </div>
+          </> 
         )}
-
-        {/* Footer */}
-        <div className="mt-6 flex items-center justify-between text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-            <span>Real-time data</span>
-          </div>
-          <p>
-            Last updated{" "}
-            {new Date().toLocaleString("en-US", {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}
-          </p>
-        </div>
       </div>
     </div>
   );
-}
-
+}   
 export default CollectiveInvestments;

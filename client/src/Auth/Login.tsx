@@ -1,21 +1,12 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff,Activity, Shield, CreditCard, TrendingUp, DollarSign, PieChart, Wallet, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-interface LoginResponse {
-  success: boolean;
-  message: string;
-  data: {
-    userName: string;
-    userId: string;
-  };
-}
+import type { LoginResponse, FormErrors } from '../types';
 
 
-interface FormErrors {
-  baseNumber?: string;
-  password?: string;
-}
+
+
+
 
 export default function LoginPage() {
   const [baseNumber, setBaseNumber] = useState<string>('');
