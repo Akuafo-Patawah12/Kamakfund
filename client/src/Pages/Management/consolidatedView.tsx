@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { TrendingUp, DollarSign, Briefcase, PieChart, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, DollarSign, Briefcase, PieChart, ArrowUpRight, ArrowDownRight, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 
@@ -10,6 +10,12 @@ interface Investment {
   name: string;
   currentValue: number;
   link: string;
+}
+
+interface Account {
+  accountName: string | null;
+  availableBalance: number;
+  currentBalance: number;
 }
 
 interface InvestmentSummary {
@@ -23,14 +29,29 @@ interface ApiResponse {
   status: number;
   data: {
     investments: Investment[];
+    accounts: Account[];
     totals: InvestmentSummary;
   };
   message?: string;
 }
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: {
+      name: string;
+      actualValue: number;
+      principal: number;
+      currentValue: number;
+      return: number;
+    };
+  }>;
+}
+
 function ConsolidatedView() {
   const [summary, setSummary] = useState<InvestmentSummary | null>(null);
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>("");
@@ -83,6 +104,7 @@ function ConsolidatedView() {
         if (data.status === 1) {
           setSummary(data.data.totals);
           setInvestments(data.data.investments);
+          setAccounts(data.data.accounts || []);
         } else {
           setError(data.message || "Failed to fetch investment summary");
         }
@@ -124,14 +146,20 @@ function ConsolidatedView() {
     return calculateGainLoss() >= 0;
   };
 
-  // Prepare data for charts
-  const pieChartData = investments.map((inv) => ({
-    name: inv.name,
-    value: inv.currentValue,
-    principal: inv.principal,
-    return: inv.currentValue - inv.principal,
-    returnPercentage: inv.principal > 0 ? ((inv.currentValue - inv.principal) / inv.principal) * 100 : 0
-  }));
+  // Prepare data for charts - PIE CHART NOW SHOWS RETURN PERCENTAGE
+  const pieChartData = investments
+    .filter(inv => inv.principal > 0) // Only include investments with principal
+    .map((inv) => ({
+      name: inv.name,
+      value: Math.abs(inv.principal > 0 ? ((inv.currentValue - inv.principal) / inv.principal) * 100 : 0), // Use absolute value for chart size
+      actualValue: inv.principal > 0 ? ((inv.currentValue - inv.principal) / inv.principal) * 100 : 0, // Keep actual value for display
+      principal: inv.principal,
+      currentValue: inv.currentValue,
+      return: inv.currentValue - inv.principal,
+      returnPercentage: inv.principal > 0 ? ((inv.currentValue - inv.principal) / inv.principal) * 100 : 0
+    }));
+
+  console.log("Pie Chart Data:", pieChartData); // Debug log
 
   const barChartData = investments.map((inv) => ({
     name: inv.name.length > 15 ? inv.name.substring(0, 15) + '...' : inv.name,
@@ -142,24 +170,26 @@ function ConsolidatedView() {
 
   const COLORS = ['#1f2937', '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
     if (active && payload && payload.length) {
+      const data = payload[0].payload;
       return (
         <div className="bg-white p-3 border border-gray-200 shadow-lg rounded">
-          <p className="font-semibold text-gray-900 mb-1">{payload[0].payload.name}</p>
-          <p className="text-sm text-gray-600">Current Value: {formatCurrency(payload[0].value)}</p>
-          {payload[0].payload.principal && (
-            <>
-              <p className="text-sm text-gray-600">Principal: {formatCurrency(payload[0].payload.principal)}</p>
-              <p className={`text-sm font-semibold ${payload[0].payload.return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                Return: {formatCurrency(payload[0].payload.return)} ({payload[0].payload.returnPercentage.toFixed(2)}%)
-              </p>
-            </>
-          )}
+          <p className="font-semibold text-gray-900 mb-1">{data.name}</p>
+          <p className={`text-sm font-bold ${data.actualValue >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            Return: {data.actualValue.toFixed(2)}%
+          </p>
+          <p className="text-sm text-gray-600">Principal: {formatCurrency(data.principal)}</p>
+          <p className="text-sm text-gray-600">Current Value: {formatCurrency(data.currentValue)}</p>
+          <p className="text-sm text-gray-600">Gain/Loss: {formatCurrency(data.return)}</p>
         </div>
       );
     }
     return null;
+  };
+
+  const getTotalAccountBalance = (): number => {
+    return accounts.reduce((sum, acc) => sum + (acc.currentBalance || 0), 0);
   };
 
   if (loading) {
@@ -216,6 +246,26 @@ function ConsolidatedView() {
 
         {/* Main Stats - Hero Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Total Principal Card */}
+          <div className="bg-white border border-gray-200 p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 rounded-full -mr-16 -mt-16 opacity-5"></div>
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3">
+                <DollarSign className="w-5 h-5 text-gray-500" />
+                <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                  Total Principal Invested
+                </p>
+              </div>
+              <p className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
+                {formatCurrency(summary.totalPrincipal)}
+              </p>
+              <p className="text-sm text-gray-600">
+                Initial capital deployed across all investment types
+              </p>
+            </div>
+          </div>
+
+          
           {/* Total Current Value Card */}
           <div className="bg-white border border-gray-200 p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gray-900 rounded-full -mr-16 -mt-16 opacity-5"></div>
@@ -241,24 +291,7 @@ function ConsolidatedView() {
             </div>
           </div>
 
-          {/* Total Principal Card */}
-          <div className="bg-white border border-gray-200 p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 rounded-full -mr-16 -mt-16 opacity-5"></div>
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3">
-                <DollarSign className="w-5 h-5 text-gray-500" />
-                <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">
-                  Total Principal Invested
-                </p>
-              </div>
-              <p className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
-                {formatCurrency(summary.totalPrincipal)}
-              </p>
-              <p className="text-sm text-gray-600">
-                Initial capital deployed across all investment types
-              </p>
-            </div>
-          </div>
+          
         </div>
 
         {/* Secondary Stats Grid */}
@@ -320,29 +353,52 @@ function ConsolidatedView() {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Pie Chart - Portfolio Distribution */}
+          {/* Pie Chart - Investment Return Percentages */}
           <div className="bg-white border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Portfolio Distribution</h2>
-            <p className="text-xs text-gray-500 mb-6">Current value by investment type</p>
-            <ResponsiveContainer width="100%" height={300}>
-              <RechartsPieChart>
-                <Pie
-                  data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name.substring(0, 12)}... ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-              </RechartsPieChart>
-            </ResponsiveContainer>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Investment Returns</h2>
+            <p className="text-xs text-gray-500 mb-6">Return percentage by investment type</p>
+            {pieChartData.length === 0 ? (
+              <div className="h-[300px] flex items-center justify-center text-gray-500">
+                No investment data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={380}>
+                <RechartsPieChart>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="40%"
+                    labelLine={false}
+                    label={({ percent, payload }) => {
+                      // Only show labels for slices larger than 8%
+                      if (percent < 0.08) return null;
+                      return `${payload.actualValue.toFixed(1)}%`;
+                    }}
+                    outerRadius={90}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={100}
+                    formatter={(value: string, entry: any) => {
+                      const payload = entry.payload;
+                      return (
+                        <span style={{ fontSize: '11px', color: '#374151' }}>
+                          {value} ({payload.actualValue.toFixed(1)}%)
+                        </span>
+                      );
+                    }}
+                    wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                  />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           {/* Bar Chart - Returns Comparison */}
@@ -367,6 +423,86 @@ function ConsolidatedView() {
           </div>
         </div>
 
+        {/* Accounts Section - Horizontal Display */}
+        {accounts.length > 0 && (
+          <div className="bg-white border border-gray-200 p-6 mb-8">
+            <div className="flex items-center gap-2 mb-6">
+              <Wallet className="w-5 h-5 text-gray-700" />
+              <h2 className="text-lg font-semibold text-gray-900">Account Balances</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {accounts
+                .filter(account => account.accountName) // Only show accounts with names
+                .map((account, index) => (
+                  <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 p-5 rounded-lg">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-1">
+                          Account
+                        </p>
+                        <p className="text-sm font-semibold text-gray-900 mb-3">
+                          {account.accountName || 'Unnamed Account'}
+                        </p>
+                      </div>
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Wallet className="w-4 h-4 text-blue-600" />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs text-gray-500">Current Balance</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {formatCurrency(account.currentBalance)}
+                        </p>
+                      </div>
+                      <div className="pt-2 border-t border-gray-200">
+                        <p className="text-xs text-gray-500">Available Balance</p>
+                        <p className="text-sm font-semibold text-green-600">
+                          {formatCurrency(account.availableBalance)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              
+              {/* Total Accounts Card */}
+              {accounts.filter(acc => acc.accountName).length > 1 && (
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 p-5 rounded-lg">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <p className="text-xs text-blue-600 uppercase tracking-wider font-medium mb-1">
+                        Total
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900 mb-3">
+                        All Accounts
+                      </p>
+                    </div>
+                    <div className="w-8 h-8 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0">
+                      <DollarSign className="w-4 h-4 text-blue-700" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-blue-600">Total Balance</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        {formatCurrency(getTotalAccountBalance())}
+                      </p>
+                    </div>
+                    <div className="pt-2 border-t border-blue-200">
+                      <p className="text-xs text-blue-600">Number of Accounts</p>
+                      <p className="text-sm font-semibold text-blue-700">
+                        {accounts.filter(acc => acc.accountName).length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Investment Breakdown Table */}
         <div className="bg-white border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -387,9 +523,7 @@ function ConsolidatedView() {
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Current Value
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Return
-                  </th>
+                  
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Face Value
                   </th>
@@ -400,10 +534,6 @@ function ConsolidatedView() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {investments.map((investment, index) => {
-                  const invReturn = investment.currentValue - investment.principal;
-                  const invReturnPct = investment.principal > 0 ? (invReturn / investment.principal) * 100 : 0;
-                  const isPositive = invReturn >= 0;
-                  
                   return (
                     <tr
                       key={index}
@@ -423,12 +553,7 @@ function ConsolidatedView() {
                           {formatCurrency(investment.currentValue)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className={`text-sm font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                          {isPositive ? '+' : ''}{formatCurrency(invReturn)}
-                          <div className="text-xs">({invReturnPct.toFixed(2)}%)</div>
-                        </div>
-                      </td>
+                     
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="text-sm text-gray-600">
                           {formatCurrency(investment.faceValue)}
@@ -457,12 +582,7 @@ function ConsolidatedView() {
                       {formatCurrency(summary.totalCurrentValue)}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className={`text-sm font-bold ${profit ? 'text-green-600' : 'text-red-600'}`}>
-                      {profit ? '+' : ''}{formatCurrency(gainLoss)}
-                      <div className="text-xs">({gainLossPercentage.toFixed(2)}%)</div>
-                    </div>
-                  </td>
+                
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="text-sm font-bold text-gray-900">
                       {formatCurrency(summary.totalFaceValue)}

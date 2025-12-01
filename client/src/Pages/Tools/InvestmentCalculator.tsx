@@ -77,189 +77,298 @@ const InvestmentCalculator = () => {
     setLumpSumPV({...lumpSumPV, investment: PV.toLocaleString('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3})});
   };
 
-  const CalculatorCard = ({ title, bgColor, children }) => (
-    <div className={`${bgColor} rounded-lg p-6 shadow-md`}>
-      <h2 className="text-gray-700 text-sm font-medium mb-4">{title}</h2>
-      {children}
-    </div>
-  );
-
-  const InputField = ({ label, value, onChange, readOnly = false }) => (
-    <div className="grid grid-cols-2 gap-4 mb-3">
-      <label className="text-gray-600 text-sm py-2">{label}</label>
-      <input
-        type="text"
-        value={value}
-        onChange={onChange}
-        readOnly={readOnly}
-        className={`border border-gray-300 rounded px-3 py-2 text-sm ${readOnly ? 'bg-gray-100' : 'bg-white'}`}
-      />
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">Investment Calculator</h1>
+              <p className="text-sm text-gray-600 mt-1">Financial planning and analysis tools</p>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-gray-500 uppercase tracking-wide">Suite</div>
+              <div className="text-sm font-medium text-gray-900">Professional Edition</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Annuity Future Value Calculator */}
-          <CalculatorCard 
-            title="Finding the future value of constant Monthly investments (annuity)" 
-            bgColor="bg-pink-100"
-          >
-            <InputField 
-              label="Monthly Investments" 
-              value={annuityFV.monthlyInvestment}
-              onChange={(e) => setAnnuityFV({...annuityFV, monthlyInvestment: e.target.value})}
-            />
-            <InputField 
-              label="Interest Rate" 
-              value={annuityFV.interestRate}
-              onChange={(e) => setAnnuityFV({...annuityFV, interestRate: e.target.value})}
-            />
-            <InputField 
-              label="Number of Years" 
-              value={annuityFV.years}
-              onChange={(e) => setAnnuityFV({...annuityFV, years: e.target.value})}
-            />
-            <InputField 
-              label="Compoundings per year (Optional)" 
-              value={annuityFV.compounding}
-              onChange={(e) => setAnnuityFV({...annuityFV, compounding: e.target.value})}
-            />
-            <InputField 
-              label="Future Value" 
-              value={annuityFV.futureValue}
-              readOnly={true}
-            />
-            <div className="flex justify-start mt-2">
+          
+          {/* Card 1: Annuity Future Value */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900">Annuity Future Value</h3>
+                  <p className="text-xs text-gray-500 mt-1">Recurring investment growth calculation</p>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Monthly Investment</label>
+                  <input
+                    type="text"
+                    value={annuityFV.monthlyInvestment}
+                    onChange={(e) => setAnnuityFV({...annuityFV, monthlyInvestment: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Interest Rate (%)</label>
+                  <input
+                    type="text"
+                    value={annuityFV.interestRate}
+                    onChange={(e) => setAnnuityFV({...annuityFV, interestRate: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Time Period (Years)</label>
+                  <input
+                    type="text"
+                    value={annuityFV.years}
+                    onChange={(e) => setAnnuityFV({...annuityFV, years: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Compounding Frequency</label>
+                  <input
+                    type="text"
+                    value={annuityFV.compounding}
+                    onChange={(e) => setAnnuityFV({...annuityFV, compounding: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+              </div>
+              <div className="pt-4 border-t border-gray-100">
+                <label className="block text-xs font-medium text-gray-500 mb-2">CALCULATED FUTURE VALUE</label>
+                <div className="text-3xl font-semibold text-gray-900 tracking-tight">${annuityFV.futureValue}</div>
+              </div>
               <button 
                 onClick={calculateAnnuityFV}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-8 rounded"
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2.5 px-4 rounded transition-colors"
               >
                 Calculate
               </button>
             </div>
-          </CalculatorCard>
+          </div>
 
-          {/* Annuity Payment Calculator */}
-          <CalculatorCard 
-            title="Finding the investment per month needed (an annuity) to reach a desired future value" 
-            bgColor="bg-pink-200"
-          >
-            <InputField 
-              label="Future Value" 
-              value={annuityPMT.futureValue}
-              onChange={(e) => setAnnuityPMT({...annuityPMT, futureValue: e.target.value})}
-            />
-            <InputField 
-              label="Interest Rate" 
-              value={annuityPMT.interestRate}
-              onChange={(e) => setAnnuityPMT({...annuityPMT, interestRate: e.target.value})}
-            />
-            <InputField 
-              label="Number of Years" 
-              value={annuityPMT.years}
-              onChange={(e) => setAnnuityPMT({...annuityPMT, years: e.target.value})}
-            />
-            <InputField 
-              label="Compoundings per year (Optional)" 
-              value={annuityPMT.compounding}
-              onChange={(e) => setAnnuityPMT({...annuityPMT, compounding: e.target.value})}
-            />
-            <InputField 
-              label="Monthly Deposits" 
-              value={annuityPMT.monthlyDeposit}
-              readOnly={true}
-            />
-            <div className="flex justify-start mt-2">
+          {/* Card 2: Annuity Payment */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900">Required Monthly Payment</h3>
+                  <p className="text-xs text-gray-500 mt-1">Target-based investment planning</p>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Target Future Value</label>
+                  <input
+                    type="text"
+                    value={annuityPMT.futureValue}
+                    onChange={(e) => setAnnuityPMT({...annuityPMT, futureValue: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Interest Rate (%)</label>
+                  <input
+                    type="text"
+                    value={annuityPMT.interestRate}
+                    onChange={(e) => setAnnuityPMT({...annuityPMT, interestRate: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Time Period (Years)</label>
+                  <input
+                    type="text"
+                    value={annuityPMT.years}
+                    onChange={(e) => setAnnuityPMT({...annuityPMT, years: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Compounding Frequency</label>
+                  <input
+                    type="text"
+                    value={annuityPMT.compounding}
+                    onChange={(e) => setAnnuityPMT({...annuityPMT, compounding: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+              </div>
+              <div className="pt-4 border-t border-gray-100">
+                <label className="block text-xs font-medium text-gray-500 mb-2">REQUIRED MONTHLY DEPOSIT</label>
+                <div className="text-3xl font-semibold text-gray-900 tracking-tight">${annuityPMT.monthlyDeposit}</div>
+              </div>
               <button 
                 onClick={calculateAnnuityPMT}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-8 rounded"
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2.5 px-4 rounded transition-colors"
               >
                 Calculate
               </button>
             </div>
-          </CalculatorCard>
+          </div>
 
-          {/* Lump Sum Future Value Calculator */}
-          <CalculatorCard 
-            title="Finding the future value of a one-time investment" 
-            bgColor="bg-orange-100"
-          >
-            <InputField 
-              label="Investment Amount" 
-              value={lumpSumFV.investment}
-              onChange={(e) => setLumpSumFV({...lumpSumFV, investment: e.target.value})}
-            />
-            <InputField 
-              label="Interest Rate" 
-              value={lumpSumFV.interestRate}
-              onChange={(e) => setLumpSumFV({...lumpSumFV, interestRate: e.target.value})}
-            />
-            <InputField 
-              label="Number of Years" 
-              value={lumpSumFV.years}
-              onChange={(e) => setLumpSumFV({...lumpSumFV, years: e.target.value})}
-            />
-            <InputField 
-              label="Compoundings per year (Optional)" 
-              value={lumpSumFV.compounding}
-              onChange={(e) => setLumpSumFV({...lumpSumFV, compounding: e.target.value})}
-            />
-            <InputField 
-              label="Future Value" 
-              value={lumpSumFV.futureValue}
-              readOnly={true}
-            />
-            <div className="flex justify-start mt-2">
+          {/* Card 3: Lump Sum Future Value */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900">Lump Sum Future Value</h3>
+                  <p className="text-xs text-gray-500 mt-1">One-time investment projection</p>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Initial Investment</label>
+                  <input
+                    type="text"
+                    value={lumpSumFV.investment}
+                    onChange={(e) => setLumpSumFV({...lumpSumFV, investment: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Interest Rate (%)</label>
+                  <input
+                    type="text"
+                    value={lumpSumFV.interestRate}
+                    onChange={(e) => setLumpSumFV({...lumpSumFV, interestRate: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Time Period (Years)</label>
+                  <input
+                    type="text"
+                    value={lumpSumFV.years}
+                    onChange={(e) => setLumpSumFV({...lumpSumFV, years: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Compounding Frequency</label>
+                  <input
+                    type="text"
+                    value={lumpSumFV.compounding}
+                    onChange={(e) => setLumpSumFV({...lumpSumFV, compounding: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+              </div>
+              <div className="pt-4 border-t border-gray-100">
+                <label className="block text-xs font-medium text-gray-500 mb-2">PROJECTED FUTURE VALUE</label>
+                <div className="text-3xl font-semibold text-gray-900 tracking-tight">${lumpSumFV.futureValue}</div>
+              </div>
               <button 
                 onClick={calculateLumpSumFV}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-8 rounded"
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2.5 px-4 rounded transition-colors"
               >
                 Calculate
               </button>
             </div>
-          </CalculatorCard>
+          </div>
 
-          {/* Lump Sum Present Value Calculator */}
-          <CalculatorCard 
-            title="Finding the one-time investment needed to reach a desired future value" 
-            bgColor="bg-orange-200"
-          >
-            <InputField 
-              label="Future Value" 
-              value={lumpSumPV.futureValue}
-              onChange={(e) => setLumpSumPV({...lumpSumPV, futureValue: e.target.value})}
-            />
-            <InputField 
-              label="Interest Rate" 
-              value={lumpSumPV.interestRate}
-              onChange={(e) => setLumpSumPV({...lumpSumPV, interestRate: e.target.value})}
-            />
-            <InputField 
-              label="Number of Years" 
-              value={lumpSumPV.years}
-              onChange={(e) => setLumpSumPV({...lumpSumPV, years: e.target.value})}
-            />
-            <InputField 
-              label="Compoundings per year (Optional)" 
-              value={lumpSumPV.compounding}
-              onChange={(e) => setLumpSumPV({...lumpSumPV, compounding: e.target.value})}
-            />
-            <InputField 
-              label="Investment Amount" 
-              value={lumpSumPV.investment}
-              readOnly={true}
-            />
-            <div className="flex justify-start mt-2">
+          {/* Card 4: Lump Sum Present Value */}
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div className="border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900">Required Lump Sum</h3>
+                  <p className="text-xs text-gray-500 mt-1">Present value calculation</p>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Target Future Value</label>
+                  <input
+                    type="text"
+                    value={lumpSumPV.futureValue}
+                    onChange={(e) => setLumpSumPV({...lumpSumPV, futureValue: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Interest Rate (%)</label>
+                  <input
+                    type="text"
+                    value={lumpSumPV.interestRate}
+                    onChange={(e) => setLumpSumPV({...lumpSumPV, interestRate: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Time Period (Years)</label>
+                  <input
+                    type="text"
+                    value={lumpSumPV.years}
+                    onChange={(e) => setLumpSumPV({...lumpSumPV, years: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">Compounding Frequency</label>
+                  <input
+                    type="text"
+                    value={lumpSumPV.compounding}
+                    onChange={(e) => setLumpSumPV({...lumpSumPV, compounding: e.target.value})}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
+                  />
+                </div>
+              </div>
+              <div className="pt-4 border-t border-gray-100">
+                <label className="block text-xs font-medium text-gray-500 mb-2">REQUIRED INITIAL INVESTMENT</label>
+                <div className="text-3xl font-semibold text-gray-900 tracking-tight">${lumpSumPV.investment}</div>
+              </div>
               <button 
                 onClick={calculateLumpSumPV}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-8 rounded"
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2.5 px-4 rounded transition-colors"
               >
                 Calculate
               </button>
             </div>
-          </CalculatorCard>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-gray-200 bg-white mt-12">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <div>© 2024 Investment Calculator Suite</div>
+            <div>For informational purposes only</div>
+          </div>
         </div>
       </div>
     </div>
