@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { TrendingUp, DollarSign, Briefcase, PieChart, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 
 interface Investment {
   principal: number;
@@ -123,6 +124,44 @@ function ConsolidatedView() {
     return calculateGainLoss() >= 0;
   };
 
+  // Prepare data for charts
+  const pieChartData = investments.map((inv) => ({
+    name: inv.name,
+    value: inv.currentValue,
+    principal: inv.principal,
+    return: inv.currentValue - inv.principal,
+    returnPercentage: inv.principal > 0 ? ((inv.currentValue - inv.principal) / inv.principal) * 100 : 0
+  }));
+
+  const barChartData = investments.map((inv) => ({
+    name: inv.name.length > 15 ? inv.name.substring(0, 15) + '...' : inv.name,
+    Principal: inv.principal,
+    "Current Value": inv.currentValue,
+    Return: inv.currentValue - inv.principal
+  }));
+
+  const COLORS = ['#1f2937', '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border border-gray-200 shadow-lg rounded">
+          <p className="font-semibold text-gray-900 mb-1">{payload[0].payload.name}</p>
+          <p className="text-sm text-gray-600">Current Value: {formatCurrency(payload[0].value)}</p>
+          {payload[0].payload.principal && (
+            <>
+              <p className="text-sm text-gray-600">Principal: {formatCurrency(payload[0].payload.principal)}</p>
+              <p className={`text-sm font-semibold ${payload[0].payload.return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                Return: {formatCurrency(payload[0].payload.return)} ({payload[0].payload.returnPercentage.toFixed(2)}%)
+              </p>
+            </>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -163,7 +202,7 @@ function ConsolidatedView() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-2">
@@ -176,7 +215,7 @@ function ConsolidatedView() {
         </div>
 
         {/* Main Stats - Hero Cards */}
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Total Current Value Card */}
           <div className="bg-white border border-gray-200 p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gray-900 rounded-full -mr-16 -mt-16 opacity-5"></div>
@@ -187,10 +226,15 @@ function ConsolidatedView() {
                   Total Current Value
                 </p>
               </div>
-              <p className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">
+              <p className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
                 {formatCurrency(summary.totalCurrentValue)}
               </p>
-              
+              <div className={`flex items-center gap-2 ${profit ? 'text-green-600' : 'text-red-600'}`}>
+                {profit ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
+                <span className="text-lg font-semibold">
+                  {formatCurrency(Math.abs(gainLoss))} ({gainLossPercentage.toFixed(2)}%)
+                </span>
+              </div>
               <p className="text-xs text-gray-500 mt-2">
                 {profit ? 'Total gain' : 'Total loss'} from principal
               </p>
@@ -207,7 +251,7 @@ function ConsolidatedView() {
                   Total Principal Invested
                 </p>
               </div>
-              <p className="text-xl lg:text-2xl font-bold text-gray-900 mb-4">
+              <p className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
                 {formatCurrency(summary.totalPrincipal)}
               </p>
               <p className="text-sm text-gray-600">
@@ -218,7 +262,7 @@ function ConsolidatedView() {
         </div>
 
         {/* Secondary Stats Grid */}
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Total Face Value Card */}
           <div className="bg-white border border-gray-200 p-6">
             <div className="flex items-start justify-between mb-4">
@@ -231,7 +275,8 @@ function ConsolidatedView() {
                     Total Face Value
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    For all investments                  </p>
+                    For all investments
+                  </p>
                 </div>
               </div>
             </div>
@@ -273,6 +318,55 @@ function ConsolidatedView() {
           </div>
         </div>
 
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Pie Chart - Portfolio Distribution */}
+          <div className="bg-white border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Portfolio Distribution</h2>
+            <p className="text-xs text-gray-500 mb-6">Current value by investment type</p>
+            <ResponsiveContainer width="100%" height={300}>
+              <RechartsPieChart>
+                <Pie
+                  data={pieChartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name.substring(0, 12)}... ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </RechartsPieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Bar Chart - Returns Comparison */}
+          <div className="bg-white border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Returns Analysis</h2>
+            <p className="text-xs text-gray-500 mb-6">Principal vs Current Value comparison</p>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={barChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-45} textAnchor="end" height={80} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip 
+                  formatter={(value: number) => formatCurrency(value)}
+                  contentStyle={{ backgroundColor: 'white', border: '1px solid #e5e7eb' }}
+                />
+                <Legend />
+                <Bar dataKey="Principal" fill="#94a3b8" />
+                <Bar dataKey="Current Value" fill="#3b82f6" />
+                <Bar dataKey="Return" fill="#10b981" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
         {/* Investment Breakdown Table */}
         <div className="bg-white border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -293,7 +387,9 @@ function ConsolidatedView() {
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Current Value
                   </th>
-                  
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Return
+                  </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Face Value
                   </th>
@@ -303,57 +399,70 @@ function ConsolidatedView() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {investments.map((investment, index) => (
-                  <tr
-  key={index}
-  className="hover:bg-gray-50 transition-colors cursor-pointer"
-  onClick={() => navigate(investment.link)}
->
-  <td className="px-6 py-4 whitespace-nowrap">
-    <div className="text-sm font-medium text-gray-900">{investment.name}</div>
-  </td>
-  <td className="px-6 py-4 whitespace-nowrap text-right">
-    <div className="text-sm text-gray-600">
-      {formatCurrency(investment.principal)}
-    </div>
-  </td>
-  <td className="px-6 py-4 whitespace-nowrap text-right">
-    <div className="text-sm font-semibold text-gray-900">
-      {formatCurrency(investment.currentValue)}
-    </div>
-  </td>
-  
-  <td className="px-6 py-4 whitespace-nowrap text-right">
-    <div className="text-sm text-gray-600">
-      {formatCurrency(investment.faceValue)}
-    </div>
-  </td>
-  <td className="px-6 py-4 whitespace-nowrap text-right">
-    <div className="text-sm text-gray-600">
-      {formatNumber(investment.totalInvestments)}
-    </div>
-  </td>
-</tr>
-
-                ))}
+                {investments.map((investment, index) => {
+                  const invReturn = investment.currentValue - investment.principal;
+                  const invReturnPct = investment.principal > 0 ? (invReturn / investment.principal) * 100 : 0;
+                  const isPositive = invReturn >= 0;
+                  
+                  return (
+                    <tr
+                      key={index}
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => navigate(investment.link)}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{investment.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="text-sm text-gray-600">
+                          {formatCurrency(investment.principal)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(investment.currentValue)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className={`text-sm font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                          {isPositive ? '+' : ''}{formatCurrency(invReturn)}
+                          <div className="text-xs">({invReturnPct.toFixed(2)}%)</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="text-sm text-gray-600">
+                          {formatCurrency(investment.faceValue)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="text-sm text-gray-600">
+                          {formatNumber(investment.totalInvestments)}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {/* Total Row */}
                 <tr className="bg-gray-100 font-semibold">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-bold text-gray-900">TOTAL</div>
                   </td>
-                  
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="text-sm font-bold text-gray-900">
                       {formatCurrency(summary.totalPrincipal)}
                     </div>
                   </td>
-
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="text-sm font-bold text-gray-900">
                       {formatCurrency(summary.totalCurrentValue)}
                     </div>
                   </td>
-                  
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className={`text-sm font-bold ${profit ? 'text-green-600' : 'text-red-600'}`}>
+                      {profit ? '+' : ''}{formatCurrency(gainLoss)}
+                      <div className="text-xs">({gainLossPercentage.toFixed(2)}%)</div>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="text-sm font-bold text-gray-900">
                       {formatCurrency(summary.totalFaceValue)}
@@ -369,7 +478,6 @@ function ConsolidatedView() {
             </table>
           </div>
         </div>
-
       </div>
     </div>
   );
