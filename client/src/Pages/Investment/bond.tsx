@@ -551,6 +551,9 @@ function BondInvestments() {
                         Security Name
                       </th>
                       <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Next Coupon Date
+                      </th>
+                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Face Value
                       </th>
                       <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -589,8 +592,9 @@ function BondInvestments() {
                       return (
                         <tr key={bond.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {bond.securityName} (ID: {bond.id})
+                            {bond.securityName} 
                           </td>
+                          <td>{bond.nextCouponDate}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900"> 
                             {formatCurrency(bond.faceValue)}
                           </td>

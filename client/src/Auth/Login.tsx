@@ -78,7 +78,7 @@ export default function LoginPage() {
       localStorage.setItem("fullName",data.data?.userName || '');
       localStorage.setItem("userId",data.data?.userId || '');
 
-      navigate('/u/dashboard');
+      navigate('/u/management/consolidated-view');
 
       console.log('Login successful:', data);
       alert(`Welcome back! Account: ${data.data.userName || 'N/A'}`);

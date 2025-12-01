@@ -64,7 +64,7 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
   const menuSections: MenuSection[] = [
     {
     id: "Consolidated",
-    title: "Consolidated view",
+    title: "Home",
     items: [
       { name: "Consolidated View", icon: LayoutDashboard, path: "/u/management/consolidated-view" }
     ],

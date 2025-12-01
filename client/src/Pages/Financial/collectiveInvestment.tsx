@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Search, Filter, X, ChevronDown, TrendingUp, Wallet, PieChart, DollarSign, Activity, RefreshCw, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CollectiveInvestment {
-  accountNumber: string;
+  investmentName: string;
   totalUnits: number;
   unitPrice: number;
   lastContributionDate: string;
@@ -166,7 +166,7 @@ function CollectiveInvestments() {
     // Search filter
     if (searchTerm) {
       const matchesSearch = 
-        inv.accountNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inv.investmentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         inv.refNo?.toLowerCase().includes(searchTerm.toLowerCase());
       if (!matchesSearch) return false;
     }
@@ -567,9 +567,8 @@ function CollectiveInvestments() {
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
                       <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Investment Date</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Account Details</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Investment Name</th>
                       <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Units</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Unit Price</th>
                       <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Valuation</th>
                       <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Cash Balance</th>
                       <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Last Contribution</th>
@@ -593,7 +592,7 @@ function CollectiveInvestments() {
                         <td className="px-6 py-4">
                           <div>
                             <p className="text-sm font-semibold text-slate-900">
-                              {investment.accountNumber || "N/A"}
+                              {investment.investmentName || "N/A"}
                             </p>
                             <p className="text-xs text-slate-500 mt-1">
                               Ref: {investment.refNo || "N/A"}
@@ -610,11 +609,7 @@ function CollectiveInvestments() {
                             {investment.totalUnits.toLocaleString(undefined, { maximumFractionDigits: 4 })}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="text-sm text-slate-900 font-semibold">
-                            {formatCurrency(investment.unitPrice)}
-                          </span>
-                        </td>
+                        
                         <td className="px-6 py-4 text-right">
                           <span className="text-sm text-slate-900 font-bold">
                             {formatCurrency(investment.valuation)}
