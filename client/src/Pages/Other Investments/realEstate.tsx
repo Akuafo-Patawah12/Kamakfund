@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Search, Filter, X, ChevronDown, Building2, TrendingUp, ChevronLeft, ChevronRight, Wallet, DollarSign, PieChart, TrendingDown } from "lucide-react";
+import InvestmentSummaryDesign from "../../Components/investment_summary_design";
 
 interface RealEstateInvestment {
   id: number;
@@ -342,52 +343,57 @@ function RealEstateInvestments() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+          
+          <div className="bg-white relative overflow-hidden border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
+            <InvestmentSummaryDesign />
+            <div className=" mb-1">
+              <div className="bg-red-50 w-fit p-2 rounded-lg mb-1">
+                <PieChart className="w-5 h-5 text-stone-700" />
+              </div>
+              <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">
                 Total Investments
               </p>
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <PieChart className="w-5 h-5 text-blue-600" />
-              </div>
+              
             </div>
-            <p className="text-2xl font-semibold text-gray-900">{totalStats.totalInvestments}</p>
+            <p className="text-xl font-semibold text-gray-900">{totalStats.totalInvestments}</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+          <div className="bg-white relative overflow-hidden border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
+            <InvestmentSummaryDesign />
+            <div className=" mb-1">
+              <div className="bg-red-50 w-fit p-2 mb-1 rounded-lg">
+                <Wallet className="w-5 h-5 text-stone-700" />
+              </div>
+              <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">
                 Page Total Invested
               </p>
-              <div className="bg-purple-100 p-2 rounded-lg">
-                <Wallet className="w-5 h-5 text-purple-600" />
-              </div>
+              
             </div>
-            <p className="text-2xl font-semibold text-gray-900">
+            <p className="text-xl font-semibold text-gray-900">
               {formatCurrency(totalStats.totalInvested)}
             </p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
+          <div className="bg-white relative overflow-hidden border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
+            <InvestmentSummaryDesign />
+            <div className=" mb-3">
+               <div className="bg-red-50 w-fit p-2 rounded-lg">
+                <DollarSign className="w-5 h-5 text-stone-700" />
+              </div>
+              <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">
                 Page Current Value
               </p>
-              <div className="bg-emerald-100 p-2 rounded-lg">
-                <DollarSign className="w-5 h-5 text-emerald-600" />
-              </div>
+             
             </div>
-            <p className="text-2xl font-semibold text-gray-900">
+            <p className="text-xl font-semibold text-gray-900">
               {formatCurrency(totalStats.totalCurrentValue)}
             </p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">
-                Page Gain/Loss
-              </p>
-              <div className={`p-2 rounded-lg ${
+          <div className="bg-white relative overflow-hidden border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
+            <InvestmentSummaryDesign />
+            <div className=" mb-3">
+              <div className={`p-2 rounded-lg w-fit mb-1 ${
                 totalStats.overallReturn > 0 
                   ? "bg-emerald-100" 
                   : totalStats.overallReturn < 0 
@@ -395,15 +401,19 @@ function RealEstateInvestments() {
                   : "bg-gray-100"
               }`}>
                 {totalStats.overallReturn > 0 ? (
-                  <TrendingUp className="w-5 h-5 text-emerald-600" />
+                  <TrendingUp className="w-5 h-5 text-red-600" />
                 ) : totalStats.overallReturn < 0 ? (
                   <TrendingDown className="w-5 h-5 text-red-600" />
                 ) : (
                   <DollarSign className="w-5 h-5 text-gray-600" />
                 )}
               </div>
+              <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">
+                Page Gain/Loss
+              </p>
+              
             </div>
-            <p className={`text-2xl font-semibold ${getReturnBadgeClass(totalStats.overallReturn)}`}>
+            <p className={`text-xl font-semibold ${getReturnBadgeClass(totalStats.overallReturn)}`}>
               {formatCurrency(totalStats.totalGainLoss)}
             </p>
             <p className={`text-xs mt-1 font-medium ${getReturnBadgeClass(totalStats.overallReturn)}`}>

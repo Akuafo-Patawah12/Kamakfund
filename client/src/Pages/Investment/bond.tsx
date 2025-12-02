@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Search, Filter, X, ChevronDown, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, X, ChevronDown, Calendar, ChevronLeft, ChevronRight, TrendingUp, DollarSign, Percent, Clock, Shield, RefreshCw, Landmark, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import InvestmentSummaryDesign from "../../Components/investment_summary_design";
 
 interface Bond {
   id: number;
@@ -37,17 +38,15 @@ function BondInvestments() {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showFilters, setShowFilters] = useState<boolean>(false);
   
-  // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
+  const [pageSize, setPageSize] = useState<number>(20);
   const [pagination, setPagination] = useState<Pagination>({
     currentPage: 1,
-    pageSize: 10,
+    pageSize: 20,
     totalRecords: 0,
     totalPages: 0
   });
   
-  // Filter states
   const [filterPerformance, setFilterPerformance] = useState<string>("all");
   const [filterMaturity, setFilterMaturity] = useState<string>("all");
   const [filterMinCoupon, setFilterMinCoupon] = useState<string>("");
@@ -102,7 +101,6 @@ function BondInvestments() {
           setBonds(data.data);
           setFilteredBonds(data.data);
           setPagination(data.pagination);
-          console.log("Fetched bond investments:", data.data);
         } else {
           setError(data.message || "Failed to fetch bonds");
         }
@@ -117,11 +115,9 @@ function BondInvestments() {
     fetchBonds();
   }, [userId, currentPage, pageSize]);
 
-  // Apply filters whenever filter criteria change
   useEffect(() => {
     let filtered = [...bonds];
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(
         (bond) =>
@@ -130,7 +126,6 @@ function BondInvestments() {
       );
     }
 
-    // Performance filter
     if (filterPerformance !== "all") {
       filtered = filtered.filter((bond) => {
         const diff = bond.currentValue - bond.faceValue;
@@ -138,7 +133,6 @@ function BondInvestments() {
       });
     }
 
-    // Maturity filter
     if (filterMaturity !== "all") {
       const now = new Date();
       const cutoffDate = new Date();
@@ -164,7 +158,6 @@ function BondInvestments() {
       });
     }
 
-    // Min/Max coupon filters
     if (filterMinCoupon) {
       const minCoupon = parseFloat(filterMinCoupon);
       filtered = filtered.filter((bond) => bond.couponRate >= minCoupon);
@@ -175,7 +168,6 @@ function BondInvestments() {
       filtered = filtered.filter((bond) => bond.couponRate <= maxCoupon);
     }
 
-    // Min/Max value filters
     if (filterMinValue) {
       const minVal = parseFloat(filterMinValue);
       filtered = filtered.filter((bond) => bond.currentValue >= minVal);
@@ -237,41 +229,40 @@ function BondInvestments() {
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
-    setCurrentPage(1); // Reset to first page when changing page size
+    setCurrentPage(1);
   };
 
-  // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
     const { currentPage, totalPages } = pagination;
+    const maxVisible = 5;
     
-    if (totalPages <= 7) {
-      // Show all pages if total is 7 or less
+    if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // Always show first page
-      pages.push(1);
-      
-      if (currentPage > 3) {
-        pages.push("...");
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(totalPages);
       }
-      
-      // Show pages around current page
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
-      
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-      
-      if (currentPage < totalPages - 2) {
-        pages.push("...");
-      }
-      
-      // Always show last page
-      pages.push(totalPages);
     }
     
     return pages;
@@ -279,10 +270,10 @@ function BondInvestments() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="text-center">
-          <div className="inline-block w-12 h-12 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin mb-4"></div>
-          <p className="text-gray-600 text-sm">Loading bond investments...</p>
+          <RefreshCw className="w-12 h-12 text-slate-400 mx-auto mb-4 animate-spin" />
+          <p className="text-slate-600 text-sm font-medium">Loading your bond investments...</p>
         </div>
       </div>
     );
@@ -290,10 +281,13 @@ function BondInvestments() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="bg-white border border-red-200 rounded p-6 max-w-md">
-          <h3 className="text-red-600 text-lg font-medium mb-2">Error</h3>
-          <p className="text-gray-600 text-sm">{error}</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-red-100 p-8 max-w-md">
+          <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-4">
+            <X className="w-6 h-6 text-red-600" />
+          </div>
+          <h3 className="text-slate-900 text-lg font-semibold mb-2">Unable to Load Bonds</h3>
+          <p className="text-slate-600 text-sm">{error}</p>
         </div>
       </div>
     );
@@ -306,41 +300,117 @@ function BondInvestments() {
     (sum, bond) => sum + (bond.faceValue * (bond.couponRate / 100) * (bond.tenorInDays / 365)),
     0
   );
+  const totalGains = totalValue - totalFaceValue;
+  const averageRate = filteredBonds.length > 0 
+    ? (filteredBonds.reduce((sum, bond) => sum + bond.couponRate, 0) / filteredBonds.length).toFixed(2)
+    : "0.00";
+
+  const startItem = pagination.totalRecords === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, pagination.totalRecords);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
-      <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-gray-500 text-sm">Fixed income portfolio overview</h1>
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Bond Investments</h1>
+              <p className="text-sm text-slate-600">Fixed income portfolio overview</p>
+            </div>
+          </div>
         </div>
 
-        {/* Search and Filter Bar */}
-        <div className="bg-white border border-gray-200 p-4 mb-6">
+        
+        
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                <Landmark className="w-5 h-5 text-slate-700" />
+              </div>
+            </div>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Number of Bonds</p>
+            <p className="text-xl font-semibold text-slate-900">{filteredBonds.length}</p>
+            <p className="text-xs text-slate-500 mt-2">Active securities</p>
+          </div>
+
+          <div className="bg-white rounded-xl relative overflow-hidden shadow-sm border border-slate-200 p-6">
+            <InvestmentSummaryDesign />
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-slate-700" />
+              </div>
+            </div>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Total Face Value</p>
+            <p className="text-xl font-semibold text-slate-900">{formatCurrency(totalFaceValue)}</p>
+            <p className="text-xs text-slate-500 mt-2">Principal invested</p>
+          </div>
+
+          <div className="bg-white rounded-xl relative overflow-hidden  shadow-sm border border-slate-200 p-6">
+            <InvestmentSummaryDesign />
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-slate-700" />
+              </div>
+            </div>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Current Value</p>
+            <p className="text-xl font-semibold text-slate-900">{formatCurrency(totalValue)}</p>
+            <div className="flex items-center gap-1 mt-2">
+              {totalGains >= 0 ? (
+                <ArrowUpRight className="w-3 h-3 text-emerald-600" />
+              ) : (
+                <ArrowDownRight className="w-3 h-3 text-red-600" />
+              )}
+              <p className={`text-xs font-medium ${totalGains >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {totalGains >= 0 ? '+' : ''}{formatCurrency(totalGains)}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                <Percent className="w-5 h-5 text-slate-700" />
+              </div>
+            </div>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Total Coupon</p>
+            <p className="text-xl font-semibold text-slate-900">{formatCurrency(totalCoupon)}</p>
+            <p className="text-xs text-slate-500 mt-2">Next: {formatCurrency(totalNextCoupon)}</p>
+          </div>
+        </div>
+
+        {/* Search and Filter Bar */ }
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search by security name or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
               />
             </div>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 border rounded text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium transition-colors ${
                 showFilters || hasActiveFilters
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               }`}
             >
               <Filter className="w-4 h-4" />
               Filters
               {hasActiveFilters && (
-                <span className="bg-white text-gray-900 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                <span className="bg-white text-slate-900 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
                   {[searchTerm, filterPerformance !== "all", filterMaturity !== "all", filterMinCoupon, filterMaxCoupon, filterMinValue, filterMaxValue].filter(Boolean).length}
                 </span>
               )}
@@ -350,7 +420,7 @@ function BondInvestments() {
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 <X className="w-4 h-4" />
                 Reset
@@ -359,16 +429,16 @@ function BondInvestments() {
           </div>
 
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-5 pt-5 border-t border-slate-200">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">
                     Performance vs Face Value
                   </label>
                   <select
                     value={filterPerformance}
                     onChange={(e) => setFilterPerformance(e.target.value)}
-                    className="w-full px-3 py-2 text-stone-600 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 text-slate-700 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                   >
                     <option value="all">All Bonds</option>
                     <option value="premium">Trading at Premium</option>
@@ -377,13 +447,13 @@ function BondInvestments() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">
                     Maturity Period
                   </label>
                   <select
                     value={filterMaturity}
                     onChange={(e) => setFilterMaturity(e.target.value)}
-                    className="w-full px-3 py-2 text-stone-600 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 text-slate-700 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                   >
                     <option value="all">All Maturities</option>
                     <option value="3months">Within 3 Months</option>
@@ -394,7 +464,7 @@ function BondInvestments() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">
                     Min Coupon Rate (%)
                   </label>
                   <input
@@ -403,12 +473,12 @@ function BondInvestments() {
                     placeholder="0.00"
                     value={filterMinCoupon}
                     onChange={(e) => setFilterMinCoupon(e.target.value)}
-                    className="w-full px-3 py-2 border text-stone-600 border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 border text-slate-700 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">
                     Max Coupon Rate (%)
                   </label>
                   <input
@@ -417,33 +487,33 @@ function BondInvestments() {
                     placeholder="No limit"
                     value={filterMaxCoupon}
                     onChange={(e) => setFilterMaxCoupon(e.target.value)}
-                    className="w-full px-3 py-2 text-stone-600 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 text-slate-700 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
-                    Min Current Value ($)
+                  <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">
+                    Min Current Value
                   </label>
                   <input
                     type="number"
                     placeholder="0"
                     value={filterMinValue}
                     onChange={(e) => setFilterMinValue(e.target.value)}
-                    className="w-full px-3 py-2 text-stone-600 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 text-slate-700 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-2">
-                    Max Current Value ($)
+                  <label className="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">
+                    Max Current Value
                   </label>
                   <input
                     type="number"
                     placeholder="No limit"
                     value={filterMaxValue}
                     onChange={(e) => setFilterMaxValue(e.target.value)}
-                    className="w-full px-3 py-2 text-stone-600 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full px-3 py-2.5 text-slate-700 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                   />
                 </div>
               </div>
@@ -451,89 +521,47 @@ function BondInvestments() {
           )}
         </div>
 
-        {/* Results Count */}
-        <div className="mb-4 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            Showing {filteredBonds.length} of {pagination.totalRecords} bonds
-            {hasActiveFilters && " (filtered)"}
+
+        {/* Results Count and Page Size */}
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <Shield className="w-4 h-4" />
+            <span>
+              Showing <span className="font-semibold text-slate-900">{startItem}-{endItem}</span> of{' '}
+              <span className="font-semibold text-slate-900">{pagination.totalRecords}</span> bonds
+              {hasActiveFilters && " (filtered)"}
+            </span>
           </div>
           
-          {/* Page Size Selector */}
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Show:</label>
+            <label className="text-sm text-slate-600">Show:</label>
             <select
               value={pageSize}
               onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-              className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
             >
               <option value={10}>10</option>
-              <option value={25}>25</option>
+              <option value={20}>20</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
             </select>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white border rounded-lg border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Number of Bonds
-            </p>
-            <p className="text-2xl font-semibold text-gray-900">{filteredBonds.length}</p>
-          </div>
-
-          <div className="bg-white border rounded-lg border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Face Value
-            </p>
-            <p className="text-2xl font-semibold text-gray-900">
-              {formatCurrency(totalFaceValue)}
-            </p>
-          </div>
-
-          <div className="bg-white border rounded-lg border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Current Value
-            </p>
-            <p className="text-2xl font-semibold text-gray-900">
-              {formatCurrency(totalValue)}
-            </p>
-            {totalFaceValue > 0 && (
-              <p
-                className={`text-xs mt-1 ${
-                  totalValue >= totalFaceValue ? "text-emerald-600" : "text-red-600"
-                }`}
-              >
-                {totalValue >= totalFaceValue ? "+" : ""}
-                {((totalValue - totalFaceValue) / totalFaceValue * 100).toFixed(2)}%
-              </p>
-            )}
-          </div>
-
-          <div className="bg-white border rounded-lg border-gray-200 p-5">
-            <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              Total Coupon
-            </p>
-            <p className="text-2xl font-semibold text-gray-900">{formatCurrency(totalCoupon)}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Next: {formatCurrency(totalNextCoupon)}
-            </p>
-          </div>
-        </div>
-
         {/* Bonds Table */}
         {filteredBonds.length === 0 ? (
-          <div className="bg-white border  border-gray-200 p-12 text-center">
-            <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No bonds found</h3>
-            <p className="text-gray-500 text-sm mb-4">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Calendar className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">No bonds found</h3>
+            <p className="text-slate-600 text-sm mb-4">
               Try adjusting your filters or search criteria
             </p>
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded text-sm font-medium hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors"
               >
                 <X className="w-4 h-4" />
                 Clear All Filters
@@ -542,44 +570,41 @@ function BondInvestments() {
           </div>
         ) : (
           <>
-            <div className="bg-white border rounded-lg border-gray-200">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Security Name
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Next Coupon Date
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Face Value
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Current Value
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Coupon Rate
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Next Coupon
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tenor (Days)
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
+                        Tenor
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Trade Date
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Principal
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Maturity Date
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-slate-200">
                     {filteredBonds.map((bond) => {
                       const valueChange = bond.faceValue > 0 
                         ? ((bond.currentValue - bond.faceValue) / bond.faceValue * 100).toFixed(2) 
@@ -590,99 +615,110 @@ function BondInvestments() {
                       const daysToMaturity = getDaysUntil(bond.maturityDate);
 
                       return (
-                        <tr key={bond.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {bond.securityName} 
+                        <tr key={bond.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900">{bond.securityName}</p>
+                              {daysToNextCoupon !== null && daysToNextCoupon > 0 && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Clock className="w-3 h-3 text-slate-400" />
+                                  <p className="text-xs text-slate-500">
+                                    Next coupon in {daysToNextCoupon} days
+                                  </p>
+                                </div>
+                              )}
+                            </div>
                           </td>
-                          <td>{bond.nextCouponDate}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900"> 
-                            {formatCurrency(bond.faceValue)}
+                          <td className="px-6 py-4 text-right">
+                            <span className="text-sm text-slate-900 font-medium">{formatCurrency(bond.faceValue)}</span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900"> 
-                            {formatCurrency(bond.currentValue)}
-                            {bond.faceValue > 0 && (
-                              <p  
-                                className={`text-xs mt-1 ${
-                                  valueChange >= "0" ? "text-emerald-600" : "text-red-600"
-                                }`} >
-                                {valueChange >= "0" ? "+" : ""}
-                                {valueChange}%  
-                              </p>
-                            )}
-                          </td> 
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900"> 
-                            {bond.couponRate.toFixed(2)}%
-                          </td> 
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900"> 
-                            {formatCurrency(bond.nextCoupon)}
-                            {daysToNextCoupon !== null && ( 
-                              <p className="text-xs text-gray-500 mt-1">
-                                in {daysToNextCoupon} days
-                              </p>  
-                            )}
-                          </td> 
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900"> 
-                            {bond.tenorInDays}
-                          </td> 
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900"> 
-                            {formatDate(bond.tradeDate)}
-                          </td> 
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
-                            {bond.principal}
+                          <td className="px-6 py-4 text-right">
+                            <div className="text-right">
+                              <span className="text-sm text-slate-900 font-bold">{formatCurrency(bond.currentValue)}</span>
+                              {bond.faceValue > 0 && (
+                                <div className="flex items-center justify-end gap-1 mt-1">
+                                  {parseFloat(valueChange) >= 0 ? (
+                                    <ArrowUpRight className="w-3 h-3 text-emerald-600" />
+                                  ) : (
+                                    <ArrowDownRight className="w-3 h-3 text-red-600" />
+                                  )}
+                                  <p className={`text-xs font-medium ${parseFloat(valueChange) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                    {parseFloat(valueChange) >= 0 ? '+' : ''}{valueChange}%
+                                  </p>
+                                </div>
+                              )}
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900"> 
-                            {formatDate(bond.maturityDate)}
-                            <p className="text-xs text-gray-500 mt-1">
-                              in {daysToMaturity} days  
-                            </p>
-                          </td> 
+                          <td className="px-6 py-4 text-right">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 text-sm font-semibold bg-slate-50 text-slate-900 rounded-full border border-slate-200 font-mono">
+                              {bond.couponRate.toFixed(2)}%
+                            </span> 
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <span className="text-sm text-slate-900 font-medium">{formatCurrency(bond.nextCoupon)}</span> 
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <span className="text-sm text-slate-900 font-medium">{bond.tenorInDays} days</span> 
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <span className="text-sm text-slate-900 font-medium">{formatDate(bond.tradeDate)}</span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <span className="text-sm text-slate-900 font-medium">{bond.principal}</span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div>
+                              <span className="text-sm text-slate-900 font-medium">{formatDate(bond.maturityDate)}</span>
+                              {daysToMaturity > 0 && (
+                                <div className="flex items-center gap-1 mt-1 justify-end">
+                                  <Clock className="w-3 h-3 text-slate-400" />
+                                  <p className="text-xs text-slate-500">
+                                    Matures in {daysToMaturity} days  
+                                  </p>
+                                </div>
+                              )}  
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
-            </div>    
+            </div>
             {/* Pagination Controls */}
-            <div className="mt-6 flex items-center justify-between">
-              <div className="text-sm text-gray-600"> 
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-slate-600">  
                 Page {pagination.currentPage} of {pagination.totalPages}
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="p-2 bg-white border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-50 transition-colors"
+                  disabled={currentPage === 1}  
+                  className={`p-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <ChevronLeft className="w-4 h-4 text-gray-600" /> 
+                  <ChevronLeft className="w-4 h-4" /> 
                 </button>
-                {getPageNumbers().map((page, index) =>
-                  page === "..." ? (  
-                    <span key={index} className="px-2 text-gray-500">...</span>
-                  ) : (
-                    <button 
-                      key={index}
-                      onClick={() => handlePageChange(Number(page))}
-                      className={`px-3 py-1 border rounded text-sm font-medium ${ 
-                        page === currentPage 
-                          ? "bg-gray-900 text-white border-gray-900" 
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50" 
-                      }`}
-                    >
-                      {page}  
-                    </button>
-                  )
-                )}  
-                <button
+                {getPageNumbers().map((page, index) => (
+                  <button 
+                    key={index}
+                    onClick={() => typeof page === 'number' && handlePageChange(page)}
+                    disabled={page === '...'} 
+                    className={`px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors ${page === currentPage ? 'bg-slate-900 text-white border-slate-900 hover:bg-slate-800' : ''} ${page === '...' ? 'cursor-default' : ''}`}
+                  >
+                    {page}  
+                  </button>
+                ))}
+                <button 
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === pagination.totalPages}  
-                  className="p-2 bg-white border border-gray-300 rounded disabled:opacity-50 hover:bg-gray-50 transition-colors"
+                  className={`p-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors ${currentPage === pagination.totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}  
                 >
-                  <ChevronRight className="w-4 h-4 text-gray-600" />  
-                </button>
+                  <ChevronRight className="w-4 h-4" /> 
+                </button> 
               </div>
-            </div>  
-          </>
+            </div>
+          </> 
         )}
       </div>
     </div>

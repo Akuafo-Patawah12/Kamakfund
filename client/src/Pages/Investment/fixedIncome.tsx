@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { TrendingUp, DollarSign, Calendar, Percent, Clock, Shield, RefreshCw, X, FileText, Landmark, ArrowUpRight, ArrowDownRight, ChevronLeft, ChevronRight } from "lucide-react";
+import InvestmentSummaryDesign from "../../Components/investment_summary_design";
 
 interface MoneyMarketInvestment {
   id: number;
@@ -230,34 +231,36 @@ const FixedIncome: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                 <FileText className="w-5 h-5 text-slate-700" />
               </div>
             </div>
-            <p className="text-sm text-slate-600 mb-1">Total Investments</p>
-            <p className="text-2xl font-bold text-slate-900">{totalItems}</p>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Total Investments</p>
+            <p className="text-xl font-semibold text-slate-900">{totalItems}</p>
             <p className="text-xs text-slate-500 mt-2">Active securities</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="bg-white rounded-xl relative overflow-hidden shadow-sm border border-slate-200 p-6">
+            <InvestmentSummaryDesign />
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-slate-700" />
               </div>
             </div>
-            <p className="text-sm text-slate-600 mb-1">Total Principal</p>
-            <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalPrincipal)}</p>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Total Principal</p>
+            <p className="text-xl font-semibold text-slate-900">{formatCurrency(totalPrincipal)}</p>
             <p className="text-xs text-slate-500 mt-2">Current page</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="bg-white rounded-xl relative overflow-hidden shadow-sm border border-slate-200 p-6">
+            <InvestmentSummaryDesign />
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-slate-700" />
               </div>
             </div>
-            <p className="text-sm text-slate-600 mb-1">Current Value</p>
-            <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalValue)}</p>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Current Value</p>
+            <p className="text-xl font-semibold text-slate-900">{formatCurrency(totalValue)}</p>
             <div className="flex items-center gap-1 mt-2">
               {totalGains >= 0 ? (
                 <ArrowUpRight className="w-3 h-3 text-emerald-600" />
@@ -272,12 +275,12 @@ const FixedIncome: React.FC = () => {
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                 <Percent className="w-5 h-5 text-slate-700" />
               </div>
             </div>
-            <p className="text-sm text-slate-600 mb-1">Total Interest</p>
-            <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalInterestAmount)}</p>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Total Interest</p>
+            <p className="text-xl font-semibold text-slate-900">{formatCurrency(totalInterestAmount)}</p>
             <p className="text-xs text-slate-500 mt-2">Avg rate: {averageRate}%</p>
           </div>
         </div>
@@ -328,31 +331,31 @@ const FixedIncome: React.FC = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Security Name
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Principal
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Interest Amount
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Face Value
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Current Value
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Rate
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Tenor
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Investment Date
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap tracking-wide">
                         Maturity Date
                       </th>
                     </tr>

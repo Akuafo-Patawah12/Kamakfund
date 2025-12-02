@@ -164,7 +164,7 @@ export default function AdvancedSidebarNav({ onNavigate }: AdvancedSidebarNavPro
       <div 
         className={`${
           isCollapsed ? 'w-20' : 'w-80'
-        } bg-slate-900 text-slate-100 transition-all duration-300 ease-in-out flex flex-col relative border-r border-slate-800 h-screen`}
+        }  bg-(--background) text-slate-100 transition-all duration-300 ease-in-out flex flex-col relative border-r border-slate-800 h-screen`}
       >
         {/* Header Section */}
         <div className="p-6 border-b border-slate-800">

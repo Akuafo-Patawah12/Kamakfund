@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Search, Filter, X, ChevronDown, TrendingUp, Wallet, PieChart, DollarSign, Activity, RefreshCw, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import InvestmentSummaryDesign from "../../Components/investment_summary_design";
 
 interface CollectiveInvestment {
   investmentName: string;
@@ -343,44 +344,46 @@ function CollectiveInvestments() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                 <Activity className="w-5 h-5 text-slate-700" />
               </div>
             </div>
-            <p className="text-sm text-slate-600 mb-1">Total Accounts</p>
-            <p className="text-2xl font-bold text-slate-900">{totalStats.totalAccounts}</p>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Total Accounts</p>
+            <p className="text-xl font-semibold text-slate-900">{totalStats.totalAccounts}</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="bg-white relative overflow-hidden rounded-xl shadow-sm border border-slate-200 p-6">
+            <InvestmentSummaryDesign />
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                 <Wallet className="w-5 h-5 text-slate-700" />
               </div>
             </div>
-            <p className="text-sm text-slate-600 mb-1">Total Units</p>
-            <p className="text-2xl font-bold text-slate-900">
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Total Units</p>
+            <p className="text-xl font-semibold text-slate-900">
               {totalStats.totalUnits.toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div className="bg-white rounded-xl relative overflow-hidden shadow-sm border border-slate-200 p-6">
+            <InvestmentSummaryDesign />
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-slate-700" />
               </div>
             </div>
-            <p className="text-sm text-slate-600 mb-1">Total Valuation</p>
-            <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalStats.totalValuation)}</p>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Total Valuation</p>
+            <p className="text-xl font-semibold text-slate-900">{formatCurrency(totalStats.totalValuation)}</p>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-slate-700" />
               </div>
             </div>
-            <p className="text-sm text-slate-600 mb-1">Cash Balance</p>
-            <p className="text-2xl font-bold text-slate-900">{formatCurrency(totalStats.totalCashBalance)}</p>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-semibold">Cash Balance</p>
+            <p className="text-xl font-semibold text-slate-900">{formatCurrency(totalStats.totalCashBalance)}</p>
           </div>
         </div>
 
@@ -566,19 +569,19 @@ function CollectiveInvestments() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Investment Date</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Investment Name</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Units</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Valuation</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Cash Balance</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Last Contribution</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Frequency</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Cost</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Initial Price</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Current Price</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Fees</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Gains/Loss</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Investment Date</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Investment Name</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Units</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Valuation</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Cash Balance</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Last Contribution</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Frequency</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Cost</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Initial Price</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Current Price</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Fees</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Gains/Loss</th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">

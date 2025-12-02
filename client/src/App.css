@@ -1,0 +1,20 @@
+:root {
+    /* default background */
+    --background: #0f172b;
+    --color: #ffffff;
+
+    /* glico background 
+    --background: #1e293b;
+    --color: #ffffff;
+    */
+
+    /* enterprise background
+    --background: #111827;
+    --color: #ffffff;
+    */
+
+    /* metro background
+    --background: #1f2937;
+    --color: #ffffff;
+    */
+}

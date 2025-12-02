@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 const InvestmentCalculator = () => {
   // State for Annuity Future Value Calculator
   const [annuityFV, setAnnuityFV] = useState({
-    monthlyInvestment: '1000.0',
-    interestRate: '12.0',
-    years: '10.0',
-    compounding: '12.0',
-    futureValue: '230,038.689'
+    monthlyInvestment: '',
+    interestRate: '',
+    years: '',
+    compounding: '',
+    futureValue: ''
   });
 
   // State for Annuity Payment Calculator
@@ -21,10 +21,10 @@ const InvestmentCalculator = () => {
 
   // State for Lump Sum Future Value Calculator
   const [lumpSumFV, setLumpSumFV] = useState({
-    investment: '1000.0',
-    interestRate: '10.0',
-    years: '2.0',
-    compounding: '1.0',
+    investment: '',
+    interestRate: '',
+    years: '',
+    compounding: '',
     futureValue: ''
   });
 
@@ -40,8 +40,10 @@ const InvestmentCalculator = () => {
   const calculateAnnuityFV = () => {
     const P = parseFloat(annuityFV.monthlyInvestment);
     const r = parseFloat(annuityFV.interestRate) / 100;
-    const n = parseFloat(annuityFV.compounding);
+    const n = annuityFV.compounding === '' ? 1 : parseFloat(annuityFV.compounding);
     const t = parseFloat(annuityFV.years);
+    
+    if (isNaN(P) || isNaN(r) || isNaN(t)) return;
     
     const FV = P * (Math.pow(1 + r/n, n*t) - 1) / (r/n);
     setAnnuityFV({...annuityFV, futureValue: FV.toLocaleString('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3})});
@@ -50,8 +52,10 @@ const InvestmentCalculator = () => {
   const calculateAnnuityPMT = () => {
     const FV = parseFloat(annuityPMT.futureValue);
     const r = parseFloat(annuityPMT.interestRate) / 100;
-    const n = parseFloat(annuityPMT.compounding);
+    const n = annuityPMT.compounding === '' ? 1 : parseFloat(annuityPMT.compounding);
     const t = parseFloat(annuityPMT.years);
+    
+    if (isNaN(FV) || isNaN(r) || isNaN(t)) return;
     
     const PMT = FV * (r/n) / (Math.pow(1 + r/n, n*t) - 1);
     setAnnuityPMT({...annuityPMT, monthlyDeposit: PMT.toLocaleString('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3})});
@@ -60,8 +64,10 @@ const InvestmentCalculator = () => {
   const calculateLumpSumFV = () => {
     const P = parseFloat(lumpSumFV.investment);
     const r = parseFloat(lumpSumFV.interestRate) / 100;
-    const n = parseFloat(lumpSumFV.compounding);
+    const n = lumpSumFV.compounding === '' ? 1 : parseFloat(lumpSumFV.compounding);
     const t = parseFloat(lumpSumFV.years);
+    
+    if (isNaN(P) || isNaN(r) || isNaN(t)) return;
     
     const FV = P * Math.pow(1 + r/n, n*t);
     setLumpSumFV({...lumpSumFV, futureValue: FV.toLocaleString('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3})});
@@ -69,11 +75,15 @@ const InvestmentCalculator = () => {
 
   const calculateLumpSumPV = () => {
     const FV = parseFloat(lumpSumPV.futureValue);
-    const r = parseFloat(lumpSumPV.interestRate) / 100;
-    const n = parseFloat(lumpSumPV.compounding);
+    const r = parseFloat(lumpSumPV.interestRate);
+    const n = lumpSumPV.compounding === '' ? 1 : parseFloat(lumpSumPV.compounding);
     const t = parseFloat(lumpSumPV.years);
     
-    const PV = FV / Math.pow(1 + r/n, n*t);
+    if (isNaN(FV) || isNaN(r) || isNaN(t)) return;
+    
+    
+    const PV = FV / Math.pow((1 + ((r / 100) / n)), (t * n));
+    
     setLumpSumPV({...lumpSumPV, investment: PV.toLocaleString('en-US', {minimumFractionDigits: 3, maximumFractionDigits: 3})});
   };
 
@@ -84,12 +94,8 @@ const InvestmentCalculator = () => {
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Investment Calculator</h1>
+            
               <p className="text-sm text-gray-600 mt-1">Financial planning and analysis tools</p>
-            </div>
-            <div className="text-right">
-              <div className="text-xs text-gray-500 uppercase tracking-wide">Suite</div>
-              <div className="text-sm font-medium text-gray-900">Professional Edition</div>
             </div>
           </div>
         </div>
@@ -97,7 +103,7 @@ const InvestmentCalculator = () => {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           
           {/* Card 1: Annuity Future Value */}
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -107,7 +113,7 @@ const InvestmentCalculator = () => {
                   <h3 className="text-base font-semibold text-gray-900">Annuity Future Value</h3>
                   <p className="text-xs text-gray-500 mt-1">Recurring investment growth calculation</p>
                 </div>
-                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+              
               </div>
             </div>
             <div className="px-6 py-5 space-y-4">
@@ -145,6 +151,7 @@ const InvestmentCalculator = () => {
                   <label className="block text-xs font-medium text-gray-700 mb-1.5">Compounding Frequency</label>
                   <input
                     type="text"
+                    placeholder="Default: 1"
                     value={annuityFV.compounding}
                     onChange={(e) => setAnnuityFV({...annuityFV, compounding: e.target.value})}
                     className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
@@ -153,7 +160,7 @@ const InvestmentCalculator = () => {
               </div>
               <div className="pt-4 border-t border-gray-100">
                 <label className="block text-xs font-medium text-gray-500 mb-2">CALCULATED FUTURE VALUE</label>
-                <div className="text-3xl font-semibold text-gray-900 tracking-tight">${annuityFV.futureValue}</div>
+                <div className="text-3xl font-semibold text-gray-900 tracking-tight">GH¢{annuityFV.futureValue || '0.000'}</div>
               </div>
               <button 
                 onClick={calculateAnnuityFV}
@@ -172,7 +179,7 @@ const InvestmentCalculator = () => {
                   <h3 className="text-base font-semibold text-gray-900">Required Monthly Payment</h3>
                   <p className="text-xs text-gray-500 mt-1">Target-based investment planning</p>
                 </div>
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                
               </div>
             </div>
             <div className="px-6 py-5 space-y-4">
@@ -210,6 +217,7 @@ const InvestmentCalculator = () => {
                   <label className="block text-xs font-medium text-gray-700 mb-1.5">Compounding Frequency</label>
                   <input
                     type="text"
+                    placeholder="Default: 1"
                     value={annuityPMT.compounding}
                     onChange={(e) => setAnnuityPMT({...annuityPMT, compounding: e.target.value})}
                     className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
@@ -218,7 +226,7 @@ const InvestmentCalculator = () => {
               </div>
               <div className="pt-4 border-t border-gray-100">
                 <label className="block text-xs font-medium text-gray-500 mb-2">REQUIRED MONTHLY DEPOSIT</label>
-                <div className="text-3xl font-semibold text-gray-900 tracking-tight">${annuityPMT.monthlyDeposit}</div>
+                <div className="text-3xl font-semibold text-gray-900 tracking-tight">GH¢{annuityPMT.monthlyDeposit || '0.000'}</div>
               </div>
               <button 
                 onClick={calculateAnnuityPMT}
@@ -237,7 +245,7 @@ const InvestmentCalculator = () => {
                   <h3 className="text-base font-semibold text-gray-900">Lump Sum Future Value</h3>
                   <p className="text-xs text-gray-500 mt-1">One-time investment projection</p>
                 </div>
-                <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+              
               </div>
             </div>
             <div className="px-6 py-5 space-y-4">
@@ -275,6 +283,7 @@ const InvestmentCalculator = () => {
                   <label className="block text-xs font-medium text-gray-700 mb-1.5">Compounding Frequency</label>
                   <input
                     type="text"
+                    placeholder="Default: 1"
                     value={lumpSumFV.compounding}
                     onChange={(e) => setLumpSumFV({...lumpSumFV, compounding: e.target.value})}
                     className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
@@ -283,7 +292,7 @@ const InvestmentCalculator = () => {
               </div>
               <div className="pt-4 border-t border-gray-100">
                 <label className="block text-xs font-medium text-gray-500 mb-2">PROJECTED FUTURE VALUE</label>
-                <div className="text-3xl font-semibold text-gray-900 tracking-tight">${lumpSumFV.futureValue}</div>
+                <div className="text-3xl font-semibold text-gray-900 tracking-tight">GH¢{lumpSumFV.futureValue || '0.000'}</div>
               </div>
               <button 
                 onClick={calculateLumpSumFV}
@@ -299,10 +308,10 @@ const InvestmentCalculator = () => {
             <div className="border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-semibold text-gray-900">Required Lump Sum</h3>
-                  <p className="text-xs text-gray-500 mt-1">Present value calculation</p>
+                  <h3 className="text-base font-semibold text-gray-900">Present value calculation</h3>
+                  <p className="text-xs text-gray-500 mt-1">Finding the one-time investment needed to reach a desired future value</p>
                 </div>
-                <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+              
               </div>
             </div>
             <div className="px-6 py-5 space-y-4">
@@ -340,6 +349,7 @@ const InvestmentCalculator = () => {
                   <label className="block text-xs font-medium text-gray-700 mb-1.5">Compounding Frequency</label>
                   <input
                     type="text"
+                    placeholder="Default: 1"
                     value={lumpSumPV.compounding}
                     onChange={(e) => setLumpSumPV({...lumpSumPV, compounding: e.target.value})}
                     className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"
@@ -348,7 +358,7 @@ const InvestmentCalculator = () => {
               </div>
               <div className="pt-4 border-t border-gray-100">
                 <label className="block text-xs font-medium text-gray-500 mb-2">REQUIRED INITIAL INVESTMENT</label>
-                <div className="text-3xl font-semibold text-gray-900 tracking-tight">${lumpSumPV.investment}</div>
+                <div className="text-3xl font-semibold text-gray-900 tracking-tight">GH¢{lumpSumPV.investment || '0.000'}</div>
               </div>
               <button 
                 onClick={calculateLumpSumPV}
@@ -362,15 +372,8 @@ const InvestmentCalculator = () => {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-gray-200 bg-white mt-12">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <div>© 2024 Investment Calculator Suite</div>
-            <div>For informational purposes only</div>
-          </div>
-        </div>
-      </div>
+     
+      
     </div>
   );
 };

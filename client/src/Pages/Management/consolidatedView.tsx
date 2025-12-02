@@ -318,7 +318,7 @@ function ConsolidatedView() {
             </p>
             <div className="mt-4 pt-4 border-t border-gray-100">
               <p className="text-xs text-gray-500">
-                Maturity value of fixed income securities
+                Maturity value of all investments 
               </p>
             </div>
           </div>
@@ -541,7 +541,7 @@ function ConsolidatedView() {
                       onClick={() => navigate(investment.link)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{investment.name}</div>
+                        <div className="text-sm font-medium text-gray-900 hover:underline">{investment.name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="text-sm text-gray-600">
